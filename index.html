@@ -9,9 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Daily Hisab">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
-<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="manifest" href="daily-hisab.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="dh-icons/favicon-32.png">
+<link rel="apple-touch-icon" href="dh-icons/apple-touch-icon.png">
 <style>
   :root{
     --bg:#f4f6f3;
@@ -629,7 +629,7 @@ header{flex-wrap:wrap;align-items:center;}
       <div class="top-menu">
         <button class="menu-btn" id="menuBtn" aria-label="More options" title="More options">⋮</button>
         <div class="menu-pop" id="menuPop">
-          <button id="menuSave">💾 Save</button>
+          <button id="menuLock">🔒 Lock</button>
           <button id="menuNew">🗓 New Day (Carry Yesterday Total)</button>
           <div class="menu-sep"></div>
           <button id="menuBackup">⬇ Backup</button>
@@ -919,7 +919,7 @@ document.addEventListener('paste', (e)=>{
   let idx = +t.dataset.idx;
   vals.forEach(v=>{
     const el = document.querySelector(`input.dense-input[data-section="${sec}"][data-idx="${idx}"]`);
-    if(el){ el.value = v; idx++; }
+    if(el && !el.readOnly){ el.value = v; idx++; }
   });
   if(document.getElementById('remark-cost')){
     document.getElementById('remark-cost').value = (state.remarks && state.remarks.cost) || '';
@@ -1032,6 +1032,7 @@ document.addEventListener('paste', (e)=>{
   const active = document.activeElement;
   if(!active || !active.matches('input.cell-input')) return;
   e.preventDefault();
+  if(active.readOnly) return;                           // locked / past day
   const text = (e.clipboardData || window.clipboardData).getData('text/plain');
   if(!text) return;
   const start = getCellPos(active);
@@ -1049,7 +1050,7 @@ document.addEventListener('paste', (e)=>{
       if(idx > 1) { maxCi = Math.max(maxCi, 1 - start.idx); return; }
       maxCi = Math.max(maxCi, ci);
       const el = cellAt(start.col, start.row + ri, idx);
-      if(el) el.value = val.trim();
+      if(el && !el.readOnly) el.value = val.trim();
     });
   });
   recalc();
@@ -1068,7 +1069,7 @@ document.addEventListener('keydown', (e)=>{
   for(let r=b.r1; r<=b.r2; r++){
     for(let c=b.c1; c<=b.c2; c++){
       const el = cellAt(b.col, r, c);
-      if(el) el.value = '';
+      if(el && !el.readOnly) el.value = '';
     }
   }
   recalc();
@@ -1334,6 +1335,7 @@ const idbStorage = (()=>{
 
 let store = (typeof window.storage !== 'undefined') ? window.storage : (window.indexedDB ? idbStorage : localBackedStorage);
 let currentDate = null;
+let dayLocked = false;   // true = this day was locked with the Lock button (read-only even today)
 
 function toast(msg){
   const el = document.getElementById('saveStatus');
@@ -1380,20 +1382,30 @@ function setFormEditable(editable){
   document.querySelectorAll('.column-remark-input').forEach(el=>{
     el.readOnly = !editable;
   });
-  document.getElementById('menuSave').disabled = !editable;
   document.getElementById('menuNew').disabled = !editable;
   document.getElementById('lockBadge').classList.toggle('show', !editable);
 }
 
-async function saveCurrent(auto){
+// Editable only if the day is today/future AND was not locked with the Lock button.
+function refreshEditable(dateStr){
+  const isPast = dateStr < todayStr();
+  setFormEditable(!isPast && !dayLocked);
+  document.getElementById('lockBadge').textContent = isPast ? '🔒 Read-only — past entry' : '🔒 Locked';
+  const btn = document.getElementById('menuLock');
+  if(isPast){ btn.textContent = '🔒 Lock'; btn.disabled = true; }
+  else{ btn.textContent = dayLocked ? '🔓 Unlock' : '🔒 Lock'; btn.disabled = false; }
+}
+
+async function saveCurrent(auto, label){
   const dateStr = document.getElementById('hisabDate').value || todayStr();
   const state = gatherState();
   state.updatedAt = new Date().toISOString();
+  if(dayLocked) state.locked = true;
   const statusEl = document.getElementById('saveStatus');
   try{
     const result = await store.set(storageKey(dateStr), JSON.stringify(state));
     if(result){
-      statusEl.textContent = auto ? 'Auto-saved ✓' : 'Saved ✓';
+      statusEl.textContent = label || (auto ? 'Auto-saved ✓' : 'Saved ✓');
 
     } else {
       statusEl.textContent = 'Save failed';
@@ -1544,12 +1556,16 @@ function sectionTotalFromState(state, key){
 
 async function loadForDate(dateStr){
   currentDate = dateStr;
+  dayLocked = false;
+  clearTimeout(autoSaveTimer);
   const picker = document.getElementById('hisabDate');
   if(picker) picker.value = dateStr;
   try{
     const rec = await store.get(storageKey(dateStr));
     if(rec && rec.value){
-      applyState(typeof rec.value === 'string' ? JSON.parse(rec.value) : rec.value);
+      const st = typeof rec.value === 'string' ? JSON.parse(rec.value) : rec.value;
+      dayLocked = !!st.locked;
+      applyState(st);
     }else{
       await prepareNewDayFromPrevious(dateStr);
     }
@@ -1557,7 +1573,7 @@ async function loadForDate(dateStr){
     console.error('load error', err);
     toast('Load failed');
   }
-  setFormEditable(dateStr >= todayStr());
+  refreshEditable(dateStr);
   updateAll();
 }
 
@@ -1658,9 +1674,21 @@ document.addEventListener('click', (e)=>{
   if(!e.target.closest('.top-menu')) pop.classList.remove('show');
 });
 
-document.getElementById('menuSave').addEventListener('click', async ()=>{
+document.getElementById('menuLock').addEventListener('click', async ()=>{
   document.getElementById('menuPop').classList.remove('show');
-  await saveCurrent(false);
+  const dateStr = document.getElementById('hisabDate').value || todayStr();
+  if(dateStr < todayStr()) return;                      // past days are already read-only
+  if(!dayLocked){
+    if(!(await uiConfirm('Lock this day? All entries become read-only, even today. You can unlock it later from this menu.'))) return;
+    clearTimeout(autoSaveTimer);
+    dayLocked = true;
+    await saveCurrent(false, 'Locked 🔒');              // saves the latest typing together with the lock
+  }else{
+    if(!(await uiConfirm('Unlock this day so it can be edited again?'))) return;
+    dayLocked = false;
+    await saveCurrent(false, 'Unlocked 🔓');
+  }
+  refreshEditable(dateStr);
 });
 document.getElementById('menuBackup').addEventListener('click', async ()=>{
   document.getElementById('menuPop').classList.remove('show');
@@ -1675,7 +1703,8 @@ document.getElementById('menuNew').addEventListener('click', async ()=>{
   const dateStr = document.getElementById('hisabDate').value || todayStr();
   if(await uiConfirm('Create a new day using the previous day account balances and Total in Add #1?')){
     await prepareNewDayFromPrevious(dateStr);
-    setFormEditable(dateStr >= todayStr());
+    dayLocked = false;
+    refreshEditable(dateStr);
   }
 });
 document.getElementById('restoreFile').addEventListener('change', (e)=>{
@@ -2095,7 +2124,7 @@ searchResults.addEventListener('click', async (e)=>{
 <script>
 // Offline / installable app support (only on http(s), so opening the file directly still works)
 if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
-  window.addEventListener('load', ()=>{ navigator.serviceWorker.register('sw.js').catch(err=>console.warn('SW register failed', err)); });
+  window.addEventListener('load', ()=>{ navigator.serviceWorker.register('daily-hisab-sw.js', {scope:'./'}).catch(err=>console.warn('SW register failed', err)); });
 }
 </script>
 </body></html>
