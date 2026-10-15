@@ -120,8 +120,7 @@
 
   /* ---- 5 column top grid (Account / Add+Commission / Shopon / Modina / Cash Count) ---- */
   .ledger-grid{display:grid; grid-template-columns:1.15fr 1fr 1fr 1fr 1.3fr 1fr; gap:12px; align-items:start; margin-bottom:16px;}
-  @media (max-width:1600px){.ledger-grid{grid-template-columns:repeat(4, 1fr);}}
-  @media (max-width:1200px){.ledger-grid{grid-template-columns:repeat(3, 1fr);}}
+  @media (max-width:1100px){.ledger-grid{grid-template-columns:repeat(3, 1fr);}}
   @media (max-width:900px){.ledger-grid{grid-template-columns:repeat(2, 1fr);}}
   @media (max-width:560px){.ledger-grid{grid-template-columns:1fr;}}
 
@@ -183,7 +182,7 @@
     font-family:var(--font-ui); font-size:.9rem; line-height:1.4;
   }
   .remark-box textarea:focus{box-shadow:inset 0 0 0 2px var(--focus);}
-  @media (max-width:1600px){.remark-box{grid-column:1 / -1;}}
+  @media (max-width:1100px){.remark-box{grid-column:1 / -1;}}
   @media (max-width:900px){.remark-box{grid-column:1 / -1;}}
 
   /* ---- dense grid panels: Modina / Shopon / Daily Cost (many rows, packed wide) ---- */
@@ -397,6 +396,39 @@
 .chart-head h2{font-size:1rem;text-transform:uppercase;letter-spacing:.06em;}
 .chart-summary{padding:7px 10px;border-radius:9px;background:var(--surface-alt);margin-bottom:10px;}
 
+/* ---- Profit graph (line + area, Day / Week / Month / Year) ---- */
+.pc-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:12px;}
+.pc-title{font-size:.82rem;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.06em;}
+.pc-total{font-size:clamp(26px,3.4vw,36px);font-weight:800;letter-spacing:-1px;line-height:1.1;margin-top:5px;color:var(--ink);font-variant-numeric:tabular-nums;}
+.pc-total.neg{color:var(--out);}
+.pc-meta{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:7px;font-size:.82rem;color:var(--ink-soft);}
+.pc-delta{font-weight:700;border-radius:999px;padding:2px 10px;}
+.pc-delta:empty{display:none;}
+.pc-delta.up{background:var(--in-soft);color:var(--in);}
+.pc-delta.down{background:var(--out-soft);color:var(--out);}
+.pc-controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end;}
+.seg{display:inline-flex;background:var(--neutral-soft);border-radius:10px;padding:3px;gap:2px;}
+.seg button{background:transparent;color:var(--ink-soft);border:0;border-radius:8px;padding:7px 13px;font:700 .84rem var(--font-ui);cursor:pointer;}
+.seg button:hover{background:rgba(28,36,32,.06);color:var(--ink);}
+.seg button.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(28,36,32,.18);}
+.pc-chart{position:relative;width:100%;height:340px;border:1px solid var(--line);border-radius:12px;background:var(--surface-alt);}
+.pc-chart svg{display:block;overflow:visible;}
+.pc-chart .phit{cursor:pointer;}
+.pc-tip{display:none;position:absolute;z-index:3;pointer-events:none;background:#1c2420;color:#fff;border-radius:10px;padding:9px 12px;font-size:12px;line-height:1.55;white-space:nowrap;box-shadow:0 8px 22px rgba(28,36,32,.3);border:1px solid rgba(255,255,255,.12);}
+.pc-tip b{display:block;font-size:12.5px;margin-bottom:2px;}
+.pc-tip span{display:block;color:#c9d2cc;}
+.pc-tip .pos{color:#7fe0b0;}
+.pc-tip .neg{color:#ffb199;}
+.pc-chart .dc-line.anim{stroke-dasharray:1;stroke-dashoffset:1;animation:dcDraw .9s ease-out forwards;}
+.pc-chart .dc-area.anim{opacity:0;animation:dcFade .8s ease-out .2s forwards;}
+.pc-chart .dc-marks.anim{opacity:0;animation:dcFade .4s ease .75s forwards;}
+.pc-chart .dc-pulse{transform-box:fill-box;transform-origin:center;animation:dcPulse 2s ease-out infinite;pointer-events:none;}
+@keyframes dcDraw{to{stroke-dashoffset:0;}}
+@keyframes dcFade{to{opacity:1;}}
+@keyframes dcPulse{0%{opacity:.45;transform:scale(1);}100%{opacity:0;transform:scale(3.2);}}
+@media(max-width:560px){.pc-chart{height:280px;}.seg button{padding:7px 10px;}}
+@media(prefers-reduced-motion:reduce){.pc-chart .dc-line.anim,.pc-chart .dc-area.anim,.pc-chart .dc-marks.anim,.pc-chart .dc-pulse{animation-duration:.01s;}}
+
 
 /* Print-only statement */
 .print-sheet{display:none;}
@@ -523,6 +555,14 @@
   .dlg-input:focus{outline:none; border-color:var(--focus); box-shadow:0 0 0 3px rgba(44,110,88,.15);}
   .dlg-actions{display:flex; gap:10px; justify-content:flex-end;}
   @media print{.dlg-back{display:none !important;}}
+  .set-row{display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px;}
+  .set-row .set-label{font-weight:700; font-size:.98rem;}
+  .zoom-ctl{display:flex; align-items:center; gap:8px;}
+  .zoom-ctl button{width:42px; height:42px; border:1px solid var(--line-strong); border-radius:10px; background:var(--surface); color:var(--ink); font-size:1.3rem; font-weight:700; line-height:1; cursor:pointer;}
+  .zoom-ctl button:hover{background:var(--surface-alt);}
+  .zoom-ctl button:disabled{opacity:.4; cursor:not-allowed;}
+  .zoom-ctl .zoom-val{min-width:58px; text-align:center; font-weight:700; font-family:var(--font-mono);}
+  @media print{#app{zoom:1 !important;}}
 
 /* ===== Header search (Chrome-style pill) ===== */
 header{flex-wrap:wrap;align-items:center;}
@@ -575,6 +615,7 @@ header{flex-wrap:wrap;align-items:center;}
 .search-row .sr-tag{display:inline-block;font-size:.68rem;font-weight:700;letter-spacing:.03em;text-transform:uppercase;border-radius:20px;padding:1px 7px;margin-right:7px;vertical-align:1px;}
 .search-row .sr-tag.acc{background:var(--in-soft);color:var(--in);}
 .search-row .sr-tag.cost{background:var(--out-soft);color:var(--out);}
+.search-row .sr-tag.add{background:#f3e9e3;color:#8a3f22;}
 @media (max-width:820px){
   .search-wrap{order:3;flex:1 1 100%;max-width:none;}
 }
@@ -610,10 +651,10 @@ header{flex-wrap:wrap;align-items:center;}
       <div class="search-top">
       <div class="search-pill">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg>
-        <input type="text" id="searchInput" autocomplete="off" spellcheck="false" aria-label="Search Account and Daily Cost (last 1 year)">
+        <input type="text" id="searchInput" autocomplete="off" spellcheck="false" aria-label="Search Account, Add and Daily Cost (last 1 year)">
         <button type="button" class="search-clear" id="searchClear" aria-label="Clear">×</button>
       </div>
-      <select class="search-filter" id="searchFilter" aria-label="Search in"><option value="all">All</option><option value="account">Account</option><option value="cost">Daily Cost</option></select>
+      <select class="search-filter" id="searchFilter" aria-label="Search in"><option value="all">All</option><option value="account">Account</option><option value="add">Add</option><option value="cost">Daily Cost</option></select>
       </div>
       <div class="search-drop" id="searchDrop">
         <div class="search-drop-head">
@@ -639,6 +680,8 @@ header{flex-wrap:wrap;align-items:center;}
           <div class="menu-sep"></div>
           <button id="menuProfit">📈 Profit Graph</button>
           <button id="menuPrint">🖨 Print Sheet</button>
+          <div class="menu-sep"></div>
+          <button id="menuSettings">⚙ Settings</button>
         </div>
       </div>
     </div>
@@ -703,24 +746,18 @@ header{flex-wrap:wrap;align-items:center;}
 
   <div class="chart-overlay" id="chartOverlay">
     <div class="chart-card">
-      <div class="chart-head">
-        <h2>Profit Graph</h2>
-        <div class="chart-tools">
-          <select id="profitRange" aria-label="Profit graph range">
-            <option value="hourly">Hourly</option>
-            <option value="daily" selected="">Daily</option>
-            <option value="weekly">Weekly</option>
-            <option value="monthly">Monthly (up to 1 year)</option>
-            <option value="yearly">Yearly</option>
-          </select>
+      <div class="pc-head">
+        <div class="pc-main">
+          <div class="pc-title" id="pcTitle">Profit</div>
+          <div class="pc-total" id="pcTotal">0.00</div>
+          <div class="pc-meta"><span class="pc-delta" id="pcDelta"></span><span class="pc-sub" id="pcSub"></span></div>
+        </div>
+        <div class="pc-controls">
+          <div class="seg" id="pcPeriod" role="tablist" aria-label="Period"><button data-p="day">Day</button><button data-p="week" class="on">Week</button><button data-p="month">Month</button><button data-p="year">Year</button></div>
           <button class="chart-close" id="chartClose" aria-label="Close">×</button>
         </div>
       </div>
-      <div class="chart-summary" id="chartSummary">1 period(s) • Latest: 1,267,956.00 • Sum: 1,267,956.00</div>
-      <div class="chart-wrap">
-        <canvas id="profitCanvas" width="924" height="342" style="display: block;"></canvas>
-        <div class="chart-empty" id="chartEmpty" style="display: none;">No saved profit data yet.</div>
-      </div>
+      <div class="pc-chart" id="pcChart"><div class="pc-tip" id="pcTip"></div></div>
     </div>
   </div>
 
@@ -733,6 +770,19 @@ header{flex-wrap:wrap;align-items:center;}
      sets #app{display:none}, and a display:none ancestor hides its children no
      matter what display value they declare, so this section must be a sibling. -->
 <div class="dlg-back" id="dlgBack" role="dialog" aria-modal="true"><div class="dlg-box"><p class="dlg-msg" id="dlgMsg"></p><input class="dlg-input" id="dlgInput" type="text" style="display:none"><div class="dlg-actions"><button class="act" id="dlgCancel" type="button">Cancel</button><button class="act primary" id="dlgOk" type="button">OK</button></div></div></div>
+
+<div class="dlg-back" id="settingsBack" role="dialog" aria-modal="true" aria-label="Settings"><div class="dlg-box">
+  <p class="dlg-msg" style="font-weight:700;font-size:1.1rem;margin-bottom:16px">⚙ Settings</p>
+  <div class="set-row">
+    <span class="set-label">Zoom</span>
+    <div class="zoom-ctl">
+      <button type="button" id="zoomOut" aria-label="Zoom out">−</button>
+      <span class="zoom-val" id="zoomVal">100%</span>
+      <button type="button" id="zoomIn" aria-label="Zoom in">+</button>
+    </div>
+  </div>
+  <div class="dlg-actions"><button class="act" id="zoomReset" type="button">Reset</button><button class="act primary" id="settingsClose" type="button">Done</button></div>
+</div></div>
 
 <section id="printSheet" class="print-sheet" aria-hidden="true">
   <div class="print-head">
@@ -765,7 +815,7 @@ header{flex-wrap:wrap;align-items:center;}
 const SECTIONS = [
   {key:'account',    label:'Account',        flow:'in',      placement:'ledger', col:1, note:true,  count:22, notePH:'Account name', amtPH:'Balance',
    fixedNotes:['bKash Agent','Khaled','Abba','Samsul I','Samsul II','Ghar','Hasan','Mamun','Bidhu','Nagad Agent','GP','Robi','Cirkle','Bank Asia','Banglalink']},
-  {key:'add',        label:'Add',            flow:'out',     placement:'ledger', col:2, note:false, count:10, amtPH:'0'},
+  {key:'add',        label:'Add',            flow:'out',     placement:'ledger', col:2, note:true,  count:10, notePH:'Note', amtPH:'0'},
   {key:'commission', label:'Commission',     flow:'neutral', placement:'ledger', col:2, note:false, count:10, amtPH:'0'},
   {key:'shopon',     label:'Shopon',         flow:'in',      placement:'ledger', col:3, note:false, count:50, amtPH:'0'},
   {key:'modina',     label:'Modina',         flow:'in',      placement:'ledger', col:4, note:false, count:50, amtPH:'0'},
@@ -1037,7 +1087,7 @@ document.addEventListener('paste', (e)=>{
   if(!text) return;
   const start = getCellPos(active);
   // single-field columns (no note) also accept comma-separated lists, same as the dense panels
-  const sec = SECTIONS.find(s => s.col === start.col && !s.note);
+  const sec = SECTIONS.find(s => s.key === active.dataset.section && !s.note);
   const splitPattern = (sec && !text.includes('\t')) ? /[\n,]+/ : /\n/;
   const rows = text.replace(/\r/g,'').split(splitPattern);
   while(rows.length && rows[rows.length-1] === '') rows.pop();
@@ -1542,7 +1592,7 @@ function setAddFirstFromPreviousTotal(state, previousState){
 
   // IMPORTANT: previous day's Total belongs in Add #1.
   // Do not create/store a separate yesterdayTotal field.
-  addRows[0] = {amt: previousTotal ? String(previousTotal) : '', note:''};
+  addRows[0] = {amt: previousTotal ? String(previousTotal) : '', note:(addRows[0] && addRows[0].note) || ''};
   state.sections.add = addRows;
 }
 
@@ -1646,7 +1696,7 @@ async function restoreBackup(file){
         const total = sectionAmountTotal(prev,'account') + sectionAmountTotal(prev,'cashCount');
         const add = Array.isArray(cur.sections.add) ? cur.sections.add : [];
         while(add.length<10) add.push({amt:'',note:''});
-        add[0] = {amt: total ? String(total) : '', note:''};
+        add[0] = {amt: total ? String(total) : '', note:(add[0] && add[0].note) || ''};
         cur.sections.add = add;
         delete cur.yesterdayTotal;
         delete cur.previousTotal;
@@ -1664,6 +1714,40 @@ async function restoreBackup(file){
 }
 
 document.getElementById('hisabDate').value = todayStr();
+
+// ---------- Settings: zoom in / out (saved on this device) ----------
+const ZOOM_KEY = 'hisab_zoom', ZOOM_MIN = 60, ZOOM_MAX = 160, ZOOM_STEP = 1;
+let zoomPct = 100;
+function applyZoom(){
+  document.getElementById('app').style.zoom = zoomPct === 100 ? '' : (zoomPct / 100);
+  document.getElementById('zoomVal').textContent = zoomPct + '%';
+  document.getElementById('zoomOut').disabled = zoomPct <= ZOOM_MIN;
+  document.getElementById('zoomIn').disabled  = zoomPct >= ZOOM_MAX;
+}
+function setZoom(v){
+  zoomPct = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, v));
+  applyZoom();
+  try{ localStorage.setItem(ZOOM_KEY, String(zoomPct)); }catch(err){}
+}
+try{
+  const saved = parseInt(localStorage.getItem(ZOOM_KEY), 10);
+  if(Number.isFinite(saved)) zoomPct = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, saved));
+}catch(err){}
+applyZoom();
+document.getElementById('menuSettings').addEventListener('click', ()=>{
+  document.getElementById('menuPop').classList.remove('show');
+  document.getElementById('settingsBack').classList.add('show');
+});
+document.getElementById('zoomIn').addEventListener('click', ()=>setZoom(zoomPct + ZOOM_STEP));
+document.getElementById('zoomOut').addEventListener('click', ()=>setZoom(zoomPct - ZOOM_STEP));
+document.getElementById('zoomReset').addEventListener('click', ()=>setZoom(100));
+document.getElementById('settingsClose').addEventListener('click', ()=>document.getElementById('settingsBack').classList.remove('show'));
+document.getElementById('settingsBack').addEventListener('mousedown', (e)=>{
+  if(e.target.id === 'settingsBack') e.currentTarget.classList.remove('show');
+});
+document.addEventListener('keydown', (e)=>{
+  if(e.key === 'Escape') document.getElementById('settingsBack').classList.remove('show');
+});
 
 document.getElementById('menuBtn').addEventListener('click', (e)=>{
   e.stopPropagation();
@@ -1809,7 +1893,19 @@ function escapePrint(s){
 document.getElementById('chartClose').addEventListener('click', ()=>{
   document.getElementById('chartOverlay').classList.remove('show');
 });
-document.getElementById('profitRange').addEventListener('change', renderProfitChart);
+document.getElementById('pcPeriod').addEventListener('click', (e)=>{
+  const b = e.target.closest('button[data-p]'); if(!b) return;
+  profitPeriod = b.dataset.p;
+  try{ localStorage.setItem('profitPeriod', profitPeriod); }catch(err){}
+  renderProfitChart();
+});
+window.addEventListener('resize', ()=>{
+  if(document.getElementById('chartOverlay').classList.contains('show')) drawProfitChart();
+});
+document.addEventListener('click', (e)=>{
+  const h = document.getElementById('pcChart'), t = document.getElementById('pcTip');
+  if(h && t && !h.contains(e.target)) t.style.display = 'none';
+});
 
 async function getSavedDays(){
   const listResult = await store.list('shophisab:');
@@ -1834,138 +1930,210 @@ function profitFromState(state){
   return sum('account') + sum('cashCount') + sum('modina') + sum('shopon') + sum('cost') - sum('add');
 }
 
-function bucketProfitData(days, range){
-  if(range === 'daily'){
-    const start = new Date(2026,8,8); // ledger start date: 8 Sep 2026
-    const now = new Date();
-    const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate()-1);
-    const profitByDate = new Map();
-    days.forEach(item=>{ profitByDate.set(item.date, profitFromState(item.state)); });
-    const out = [];
-    for(let d=new Date(start); d<=yesterday; d.setDate(d.getDate()+1)){
-      const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), dd=String(d.getDate()).padStart(2,'0');
-      const dateKey = `${y}-${m}-${dd}`;
-      out.push({label: dd, value: profitByDate.get(dateKey) || 0});
-    }
-    return out;
-  }
+// ---------- Profit graph: same style as the dashboard graph (profit only) ----------
+// A day whose profit is more than +20,000 or less than -20,000 is treated as invalid:
+// the graph shows 0 for it and the tooltip says "Invalid".
+const PROFIT_LIMIT = 20000;
+let profitPeriod = 'week', profitView = null;
+try{ const sp = localStorage.getItem('profitPeriod'); if(['day','week','month','year'].includes(sp)) profitPeriod = sp; }catch(err){}
 
-  const buckets = new Map();
-  days.forEach(item=>{
-    const p = profitFromState(item.state);
-    let key, label;
-    if(range === 'hourly'){
-      key = item.state?.updatedAt ? item.state.updatedAt.slice(0,13) : item.date+'T00';
-      label = key.replace('T',' ') + ':00';
-    }else if(range === 'weekly'){
-      const x = new Date(item.date+'T00:00:00');
-      const day = x.getDay();
-      x.setDate(x.getDate() - ((day+6)%7));
-      key = x.toISOString().slice(0,10);
-      label = 'Wk '+x.toISOString().slice(5,10);
-    }else if(range === 'monthly'){
-      key = item.date.slice(0,7); label = item.date.slice(0,7);
-    }else{
-      key = item.date.slice(0,4); label = item.date.slice(0,4);
+function pcShort(n){
+  const a = Math.abs(n), sg = n < 0 ? '-' : '';
+  if(a >= 1e6) return sg + (a/1e6).toFixed(a>=1e7?0:1).replace(/\.0$/,'') + 'M';
+  if(a >= 1e3) return sg + (a/1e3).toFixed(a>=1e4?0:1).replace(/\.0$/,'') + 'k';
+  return sg + Math.round(a);
+}
+function pcDateKey(d){
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function pcRanges(period){
+  const n = new Date(), Y = n.getFullYear(), M = n.getMonth(), D = n.getDate(), b = [];
+  const wd = d => d.toLocaleDateString(undefined,{weekday:'short', day:'numeric', month:'short'});
+  let prev, title, vs, single = true;
+  if(period === 'day'){
+    for(let h=0; h<24; h++){
+      const hh = h%12 || 12, ap = h<12 ? 'am' : 'pm';
+      b.push({hour:h, label: h%4===0 ? hh+ap : '', title: hh+ap+' – '+((h+1)%12||12)+((h+1)%24<12?'am':'pm')});
     }
-    const old = buckets.get(key);
-    if(old) old.value += p;
-    else buckets.set(key,{label,value:p});
+    prev = [pcDateKey(new Date(Y,M,D-1)), pcDateKey(new Date(Y,M,D))]; title = 'today'; vs = 'yesterday';
+  }else if(period === 'week'){
+    for(let i=6; i>=0; i--){
+      const st = new Date(Y,M,D-i), en = new Date(Y,M,D-i+1);
+      b.push({from:pcDateKey(st), to:pcDateKey(en), label: st.toLocaleDateString(undefined,{weekday:'short'}), title: wd(st)});
+    }
+    prev = [pcDateKey(new Date(Y,M,D-13)), pcDateKey(new Date(Y,M,D-6))]; title = 'last 7 days'; vs = 'previous 7 days';
+  }else if(period === 'month'){
+    for(let i=29; i>=0; i--){
+      const st = new Date(Y,M,D-i), en = new Date(Y,M,D-i+1);
+      b.push({from:pcDateKey(st), to:pcDateKey(en), label: (i%5===0 || i===29) ? String(st.getDate()) : '', title: wd(st)});
+    }
+    prev = [pcDateKey(new Date(Y,M,D-59)), pcDateKey(new Date(Y,M,D-29))]; title = 'last 30 days'; vs = 'previous 30 days';
+  }else{
+    single = false;
+    for(let i=11; i>=0; i--){
+      const st = new Date(Y,M-i,1), en = new Date(Y,M-i+1,1);
+      b.push({from:pcDateKey(st), to:pcDateKey(en), label: st.toLocaleDateString(undefined,{month:'short'}), title: st.toLocaleDateString(undefined,{month:'long', year:'numeric'})});
+    }
+    prev = [pcDateKey(new Date(Y,M-23,1)), pcDateKey(new Date(Y,M-11,1))]; title = 'last 12 months'; vs = 'previous 12 months';
+  }
+  return {b, prev, title, vs, single};
+}
+function pcBuild(days, period){
+  const R = pcRanges(period), todayKey = pcDateKey(new Date());
+  const vals = R.b.map(()=>({profit:0, invalid:0, count:0}));
+  let prevTot = 0;
+  days.forEach(it=>{
+    const raw = profitFromState(it.state);
+    const bad = !Number.isFinite(raw) || Math.abs(raw) > PROFIT_LIMIT;
+    const p = bad ? 0 : raw;
+    if(it.date >= R.prev[0] && it.date < R.prev[1]){ prevTot += p; return; }
+    let i = -1;
+    if(period === 'day'){
+      if(it.date === todayKey){
+        const dt = it.state && it.state.updatedAt ? new Date(it.state.updatedAt) : null;
+        i = dt && !isNaN(dt) ? dt.getHours() : 0;
+      }
+    }else{
+      i = R.b.findIndex(x => it.date >= x.from && it.date < x.to);
+    }
+    if(i < 0) return;
+    vals[i].profit += p; vals[i].count++; if(bad) vals[i].invalid++;
   });
-  const out = Array.from(buckets.entries()).sort((a,b)=>a[0].localeCompare(b[0])).map(([,v])=>v);
-  return range === 'monthly' ? out.slice(-12) : out;
+  return {R, vals, prevTot};
+}
+// "Nice" axis ticks so gridlines land on round numbers
+function pcNice(mn, mx, cnt){
+  if(mx <= mn) mx = mn + 100;
+  const rough = (mx-mn)/cnt, pw = Math.pow(10, Math.floor(Math.log10(rough))), f = rough/pw;
+  const step = (f<=1?1:f<=2?2:f<=2.5?2.5:f<=5?5:10) * pw;
+  const s0 = Math.floor(mn/step + 1e-9) * step, e0 = Math.ceil(mx/step - 1e-9) * step, t = [];
+  for(let v=s0; v<=e0+step*0.001; v+=step) t.push(Math.round(v*1e6)/1e6);
+  return {ticks:t, min:s0, max:e0};
+}
+// Monotone cubic smoothing: smooth curve that never overshoots the data
+function pcMono(P){
+  const n = P.length;
+  if(n === 1) return 'M' + P[0][0].toFixed(1) + ' ' + P[0][1].toFixed(1);
+  const dx = [], m = [], t = [];
+  for(let i=0; i<n-1; i++){ dx[i] = P[i+1][0]-P[i][0]; m[i] = (P[i+1][1]-P[i][1])/dx[i]; }
+  t[0] = m[0]; t[n-1] = m[n-2];
+  for(let i=1; i<n-1; i++) t[i] = m[i-1]*m[i] <= 0 ? 0 : (m[i-1]+m[i])/2;
+  for(let i=0; i<n-1; i++){
+    if(m[i] === 0){ t[i] = t[i+1] = 0; continue; }
+    const a = t[i]/m[i], b = t[i+1]/m[i], q = a*a + b*b;
+    if(q > 9){ const k = 3/Math.sqrt(q); t[i] = k*a*m[i]; t[i+1] = k*b*m[i]; }
+  }
+  let d = 'M' + P[0][0].toFixed(1) + ' ' + P[0][1].toFixed(1);
+  for(let i=0; i<n-1; i++){
+    const h = dx[i]/3;
+    d += 'C' + (P[i][0]+h).toFixed(1) + ' ' + (P[i][1]+t[i]*h).toFixed(1) + ' ' + (P[i+1][0]-h).toFixed(1) + ' ' + (P[i+1][1]-t[i+1]*h).toFixed(1) + ' ' + P[i+1][0].toFixed(1) + ' ' + P[i+1][1].toFixed(1);
+  }
+  return d;
 }
 
 async function renderProfitChart(){
-  const canvas = document.getElementById('profitCanvas');
-  const empty = document.getElementById('chartEmpty');
-  const summary = document.getElementById('chartSummary');
-  const range = document.getElementById('profitRange').value;
   const days = await getSavedDays();
-  const data = bucketProfitData(days,range);
+  const {R, vals, prevTot} = pcBuild(days, profitPeriod);
+  const tot = vals.reduce((a,v)=>a+v.profit, 0);
+  const invalidN = vals.reduce((a,v)=>a+v.invalid, 0);
+  document.getElementById('pcTitle').textContent = 'Profit · ' + R.title;
+  const totEl = document.getElementById('pcTotal');
+  totEl.textContent = fmt(tot);
+  totEl.className = 'pc-total' + (tot < 0 ? ' neg' : '');
+  const dl = document.getElementById('pcDelta');
+  if(prevTot !== 0){
+    const pct = (tot-prevTot)/Math.abs(prevTot)*100;
+    dl.className = 'pc-delta ' + (pct>=0 ? 'up' : 'down');
+    dl.textContent = (pct>=0 ? '▲ ' : '▼ ') + Math.abs(pct).toFixed(Math.abs(pct)>=100 ? 0 : 1) + '%';
+  }else{ dl.className = 'pc-delta'; dl.textContent = ''; }
+  document.getElementById('pcSub').textContent =
+    (prevTot !== 0 ? 'vs ' + R.vs : 'No earlier data to compare') +
+    (invalidN ? ' · ' + invalidN + ' invalid day' + (invalidN===1?'':'s') + ' (over ±' + PROFIT_LIMIT.toLocaleString('en-US') + ') counted as 0' : '');
+  document.querySelectorAll('#pcPeriod button').forEach(b=>b.classList.toggle('on', b.dataset.p === profitPeriod));
+  profitView = {R, vals, anim:true};
+  drawProfitChart();
+}
 
-  if(!data.length){
-    canvas.style.display='none'; empty.style.display='flex'; summary.textContent='No saved profit data yet.';
-    return;
-  }
-  canvas.style.display='block'; empty.style.display='none';
-  const total = data.reduce((s,x)=>s+x.value,0);
-  const latest = data[data.length-1].value;
-  summary.textContent = `${data.length} period(s) • Latest: ${fmt(latest)} • Sum: ${fmt(total)}`;
-
-  const ctx = canvas.getContext('2d');
-  const rect = canvas.getBoundingClientRect();
-  const dpr = window.devicePixelRatio || 1;
-  canvas.width = Math.max(320, Math.floor(rect.width*dpr));
-  canvas.height = Math.max(220, Math.floor(rect.height*dpr));
-  ctx.setTransform(dpr,0,0,dpr,0,0);
-
-  const W=rect.width,H=rect.height;
-  ctx.clearRect(0,0,W,H);
-  const pad={l:14,r:14,t:34,b:30};
-  const cw=W-pad.l-pad.r,ch=H-pad.t-pad.b;
-  const vals=data.map(x=>x.value);
-  let min=Math.min(0,...vals), max=Math.max(0,...vals);
-  if(min===max){min-=1;max+=1;}
-  const rangeV=max-min;
-  const x=i=>pad.l+(data.length===1?cw/2:(i/(data.length-1))*cw);
-  const y=v=>pad.t+(max-v)/rangeV*ch;
-  const zeroY=y(0);
-
-  ctx.strokeStyle='rgba(50,60,55,.35)';
-  ctx.lineWidth=1;
-  ctx.beginPath();ctx.moveTo(pad.l,zeroY);ctx.lineTo(W-pad.r,zeroY);ctx.stroke();
-
-  // rounded bars
-  const barWidth = Math.max(4, Math.min(46, (cw/data.length)*0.6));
-  const labelEvery=Math.max(1,Math.ceil(data.length/8));
-  function roundedBar(bx,by,bw,bh,r,roundTop){
-    r = Math.max(0, Math.min(r, bw/2, bh));
-    ctx.beginPath();
-    if(roundTop){
-      ctx.moveTo(bx,by+bh);
-      ctx.lineTo(bx,by+r);
-      ctx.arcTo(bx,by,bx+r,by,r);
-      ctx.lineTo(bx+bw-r,by);
-      ctx.arcTo(bx+bw,by,bx+bw,by+r,r);
-      ctx.lineTo(bx+bw,by+bh);
-    }else{
-      ctx.moveTo(bx,by);
-      ctx.lineTo(bx+bw,by);
-      ctx.lineTo(bx+bw,by+bh-r);
-      ctx.arcTo(bx+bw,by+bh,bx+bw-r,by+bh,r);
-      ctx.lineTo(bx+r,by+bh);
-      ctx.arcTo(bx,by+bh,bx,by+bh-r,r);
-      ctx.lineTo(bx,by);
+function drawProfitChart(){
+  if(!profitView) return;
+  const host = document.getElementById('pcChart');
+  if(!host || !host.clientWidth) return;
+  const {R, vals} = profitView, anim = !!profitView.anim; profitView.anim = false;
+  const W = Math.max(260, host.clientWidth), H = Math.max(150, host.clientHeight || 260);
+  const L = 50, Rr = 16, T = 26, B = 28, n = vals.length;
+  const data = vals.map(v=>v.profit);
+  const hasData = vals.some(v=>v.profit !== 0 || v.invalid > 0);
+  const sc = hasData ? pcNice(Math.min(0,...data), Math.max(0,...data), 4) : pcNice(0,100,4);
+  const top = sc.max, bot = sc.min, span = (top-bot) || 1;
+  const y = v => T + (top-v)/span*(H-T-B), y0 = y(0);
+  const slot = (W-L-Rr)/n, X = i => L + slot*(i+.5);
+  const tone = '#0f6b4e', bad = '#a8502f';
+  const F = anim ? ' anim' : '';
+  let g = '';
+  sc.ticks.forEach(t=>{
+    const yy = y(t).toFixed(1);
+    g += `<line x1="${L}" x2="${W-Rr}" y1="${yy}" y2="${yy}" stroke="${t===0&&bot<0?'#cdd3c8':'#e4e8df'}"/>` +
+         (hasData ? `<text x="${L-10}" y="${(+yy+3.5).toFixed(1)}" text-anchor="end" font-size="10.5" fill="#8a948d">${pcShort(t)}</text>` : '');
+  });
+  const pts = data.map((v,i)=>[X(i), y(v)]);
+  let series = '', marks = '';
+  if(hasData){
+    const lp = pcMono(pts);
+    const ap = lp + 'L' + pts[n-1][0].toFixed(1) + ' ' + y0.toFixed(1) + 'L' + pts[0][0].toFixed(1) + ' ' + y0.toFixed(1) + 'Z';
+    series = `<defs><linearGradient id="pcGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${tone}" stop-opacity=".28"/><stop offset="1" stop-color="${tone}" stop-opacity=".02"/></linearGradient></defs>` +
+             `<path class="dc-area${F}" d="${ap}" fill="url(#pcGrad)"/>` +
+             `<path class="dc-line${F}" d="${lp}" pathLength="1" fill="none" stroke="${tone}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`;
+    if(n <= 12) pts.forEach((p,i)=>{ if(!vals[i].invalid) marks += `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3.5" fill="#fff" stroke="${tone}" stroke-width="2"/>`; });
+    vals.forEach((v,i)=>{ if(v.invalid) marks += `<circle cx="${pts[i][0].toFixed(1)}" cy="${pts[i][1].toFixed(1)}" r="4.5" fill="#fff" stroke="${bad}" stroke-width="2.2"/>`; });
+    const lp2 = pts[n-1];
+    if(!vals[n-1].invalid){
+      marks += `<circle class="dc-pulse" cx="${lp2[0].toFixed(1)}" cy="${lp2[1].toFixed(1)}" r="5" fill="${tone}"/><circle cx="${lp2[0].toFixed(1)}" cy="${lp2[1].toFixed(1)}" r="4.5" fill="${tone}" stroke="#fff" stroke-width="2"/>`;
     }
-    ctx.closePath();
-    ctx.fill();
+    let pk = 0; data.forEach((v,i)=>{ if(v > data[pk]) pk = i; });
+    if(data[pk] > 0 && n > 1){
+      const t = pcShort(data[pk]), w = t.length*6.4 + 16, px = Math.max(L+w/2, Math.min(X(pk), W-Rr-w/2)), py = pts[pk][1] - 14;
+      marks += `<g><rect x="${(px-w/2).toFixed(1)}" y="${(py-9).toFixed(1)}" width="${w.toFixed(1)}" height="18" rx="9" fill="${tone}"/><text x="${px.toFixed(1)}" y="${(py+3.8).toFixed(1)}" text-anchor="middle" font-size="10.5" font-weight="700" fill="#fff">${t}</text></g>`;
+    }
   }
-  data.forEach((pt,i)=>{
-    const xx=x(i), yy=y(pt.value);
-    const barX = xx - barWidth/2;
-    const barY = Math.min(yy, zeroY);
-    const barH = Math.max(2, Math.abs(zeroY - yy));
-    ctx.fillStyle = pt.value<0 ? '#a8502f' : '#0f6b4e';
-    roundedBar(barX, barY, barWidth, barH, 7, pt.value>=0);
+  let labels = '', hits = '';
+  data.forEach((v,i)=>{
+    if(R.b[i].label) labels += `<text x="${X(i).toFixed(1)}" y="${H-8}" text-anchor="middle" font-size="11" fill="#7a857e">${R.b[i].label}</text>`;
+    hits += `<rect class="phit" data-i="${i}" x="${(L+slot*i).toFixed(1)}" y="0" width="${slot.toFixed(1)}" height="${H-B}" fill="transparent"/>`;
   });
-
-  // value labels above (or below, for negative) each shown bar
-  ctx.font='bold 11px Arial';ctx.textAlign='center';
-  data.forEach((pt,i)=>{
-    if(i%labelEvery!==0 && i!==data.length-1) return;
-    const xx=x(i), yy=y(pt.value);
-    ctx.fillStyle = pt.value<0 ? '#a8502f' : '#0f6b4e';
-    if(pt.value>=0) ctx.fillText(fmt(pt.value), xx, Math.min(yy,zeroY)-7);
-    else ctx.fillText(fmt(pt.value), xx, Math.max(yy,zeroY)+16);
+  const empty = hasData ? '' : `<text x="${((L+W-Rr)/2).toFixed(1)}" y="${((T+H-B)/2).toFixed(1)}" text-anchor="middle" font-size="13" fill="#8a948d">No saved profit data in this period yet</text>`;
+  const hover = `<line id="pcGuide" y1="${T-6}" y2="${H-B}" stroke="#c7cec3" stroke-dasharray="3 3" style="display:none"/><circle id="pcDot" r="5.5" fill="#fff" stroke="${tone}" stroke-width="2.5" style="display:none"/>`;
+  const old = host.querySelector('svg'); if(old) old.remove();
+  host.insertAdjacentHTML('afterbegin', `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Profit chart">${g}${series}<g class="dc-marks${F}">${marks}</g>${labels}${empty}${hover}${hits}</svg>`);
+  const tip = document.getElementById('pcTip'), svg = host.querySelector('svg');
+  const guide = svg.querySelector('#pcGuide'), dot = svg.querySelector('#pcDot');
+  const show = i=>{
+    const v = vals[i], px = X(i), py = y(data[i]);
+    guide.setAttribute('x1', px); guide.setAttribute('x2', px); guide.style.display = '';
+    dot.setAttribute('cx', px); dot.setAttribute('cy', py); dot.style.display = '';
+    dot.setAttribute('stroke', v.invalid ? bad : tone);
+    let html = `<b>${R.b[i].title}</b>`;
+    if(R.single && v.invalid){
+      html += `<span class="neg">Profit: Invalid</span><span>Over ±${PROFIT_LIMIT.toLocaleString('en-US')} — shown as 0</span>`;
+    }else{
+      html += `<span class="${v.profit<0?'neg':'pos'}">Profit ${fmt(v.profit)}</span>`;
+      if(v.invalid) html += `<span class="neg">${v.invalid} invalid day${v.invalid===1?'':'s'} counted as 0</span>`;
+      if(v.count === 0) html += `<span>No saved entry</span>`;
+      else if(!R.single) html += `<span>${v.count} day${v.count===1?'':'s'}</span>`;
+    }
+    tip.innerHTML = html;
+    tip.style.display = 'block';
+    const tw = tip.offsetWidth, th = tip.offsetHeight;
+    const left = Math.max(4, Math.min(px - tw/2, W - tw - 4));
+    let tp = py - th - 16; if(tp < 0) tp = py + 16;
+    tip.style.left = left + 'px'; tip.style.top = Math.max(0, Math.min(H - th - 4, tp)) + 'px';
+  };
+  const hide = ()=>{ tip.style.display = 'none'; guide.style.display = 'none'; dot.style.display = 'none'; };
+  svg.querySelectorAll('.phit').forEach(r=>{
+    const i = +r.dataset.i;
+    r.addEventListener('mouseenter', ()=>show(i));
+    r.addEventListener('click', ()=>show(i));
   });
-
-  // category labels below
-  ctx.fillStyle='#67716b';ctx.font='11px Arial';ctx.textAlign='center';
-  data.forEach((pt,i)=>{
-    if(i%labelEvery===0 || i===data.length-1) ctx.fillText(pt.label,x(i),H-10);
-  });
-  ctx.textAlign='left';
+  svg.addEventListener('mouseleave', hide);
 }
 
 // ---------- Daily Cost search (last 1 year, by name or amount) ----------
@@ -2002,6 +2170,14 @@ async function loadCostEntries(){
         if(amt === null || amt === 0) return;      // skip empty account rows
         out.push({date, kind:'account', note, amt});
       });
+      (st.sections && st.sections.add || []).forEach((r,i)=>{
+        const note = (r && r.note ? String(r.note) : '').trim();
+        const n = parseFloat(String(r && r.amt != null ? r.amt : '').replace(/,/g,''));
+        const amt = Number.isFinite(n) ? n : null;
+        if(i === 0 && !note) return;               // Add #1 is the auto carry-forward total; only searchable once it has a note
+        if(!note && !(amt !== null && amt !== 0)) return;
+        out.push({date, kind:'add', note, amt});
+      });
       (st.sections && st.sections.cost || []).forEach(r=>{
         const note = (r && r.note ? String(r.note) : '').trim();
         const n = parseFloat(String(r && r.amt != null ? r.amt : '').replace(/,/g,''));
@@ -2011,7 +2187,8 @@ async function loadCostEntries(){
       });
     }catch(err){ console.error('search read error', key, err); }
   }
-  return out.sort((a,b)=> b.date.localeCompare(a.date) || (a.kind===b.kind ? 0 : (a.kind==='account' ? -1 : 1)));
+  const KIND_ORDER = {account:0, add:1, cost:2};
+  return out.sort((a,b)=> b.date.localeCompare(a.date) || (KIND_ORDER[a.kind] - KIND_ORDER[b.kind]));
 }
 
 function renderSearch(){
@@ -2047,7 +2224,7 @@ function renderSearch(){
     row.title = 'Open this day';
     const d = document.createElement('span'); d.className = 'sr-date'; d.textContent = e.date;
     const n = document.createElement('span'); n.className = 'sr-note' + (e.note ? '' : ' empty');
-    const tag = document.createElement('span'); tag.className = 'sr-tag ' + (e.kind==='account' ? 'acc' : 'cost'); tag.textContent = e.kind==='account' ? 'Account' : 'Cost';
+    const tag = document.createElement('span'); tag.className = 'sr-tag ' + (e.kind==='account' ? 'acc' : e.kind==='add' ? 'add' : 'cost'); tag.textContent = e.kind==='account' ? 'Account' : e.kind==='add' ? 'Add' : 'Cost';
     n.append(tag, document.createTextNode(e.note || '—'));
     const a = document.createElement('span'); a.className = 'sr-amt' + (e.kind==='account' ? ' acc' : ''); a.textContent = e.amt !== null ? fmt(e.amt) : '';
     row.append(d, n, a);
