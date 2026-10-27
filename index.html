@@ -403,6 +403,29 @@ table.ledger.due-table td.row-sum{
   color:var(--ink);
 }
 .column-remark.single-remark label::before{content:"📝";font-size:.9rem;}
+.remark-row{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:0 0 18px;}
+.remark-row .column-remark.single-remark{margin:0;}
+.column-remark-input.single::placeholder{color:#b4bcb6; font-weight:600; font-size:1.05rem; letter-spacing:.04em; opacity:.9; text-align:center;}
+.column-remark-input.single:placeholder-shown{
+  text-align:center; min-height:84px; line-height:1.3; padding-top:calc((84px - 1.37rem) / 2); padding-bottom:0;
+}
+
+/* ---- Name suggestions (Add / Daily Cost notes) ---- */
+.name-suggest{
+  position:fixed; z-index:300; display:none; min-width:150px; max-width:min(320px,92vw); max-height:230px; overflow-y:auto;
+  background:var(--surface); border:1px solid var(--line-strong); border-radius:10px;
+  box-shadow:0 12px 30px rgba(28,36,32,.18); padding:4px;
+}
+.name-suggest.show{display:block;}
+.name-suggest .ns-item{
+  display:flex; justify-content:space-between; align-items:baseline; gap:10px;
+  padding:7px 10px; border-radius:7px; cursor:pointer; font:.88rem var(--font-ui); color:var(--ink);
+}
+.name-suggest .ns-item small{color:var(--ink-soft); font-size:.72rem; white-space:nowrap;}
+.name-suggest .ns-item.active,.name-suggest .ns-item:hover{background:var(--surface-alt);}
+.name-suggest .ns-item b{font-weight:800; color:var(--hc, var(--ink));}
+@media print{.name-suggest{display:none !important;}}
+@media (max-width:560px){.remark-row{grid-template-columns:1fr;}}
 .pulse-bar{background:rgba(255,255,255,.9);}
 .pulse-inner{max-width:1440px;padding:9px 20px;}
 .pulse-item{padding:4px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface);}
@@ -603,6 +626,13 @@ table.ledger.due-table td.row-sum{
   .print-sheet.has-dues .print-due-row,.print-sheet.has-dues .print-due-exprline{break-inside:avoid;}
   .print-due-row span:last-child{flex:none; font-weight:700; white-space:nowrap;}
   .print-due-total{display:flex; justify-content:space-between; gap:2mm; border-top:.3mm solid #0f6b4e; margin-top:.6mm; padding-top:.5mm; font-weight:800; color:#12281f;}
+  /* ADD (left) + Remarks (right), straight below the Total row, no headings */
+  /* ADD amount: no box, no line - straight under the Total amount, in the Balance column (17% / 12% like the table). Remarks to its right. */
+  .print-ar{display:none;}
+  .print-ar.show{display:grid; grid-template-columns:17% 12% minmax(0,1fr); align-items:start; margin-top:1.2mm; font-size:9pt; line-height:1.3;}
+  .print-ar .pa-add{grid-column:2; text-align:right; padding:0 3.2mm; font-weight:700; font-family:Arial,sans-serif; color:#0f6b4e; white-space:pre-line; overflow-wrap:anywhere;}
+  .print-ar .pa-rem{grid-column:3; padding:0 3.2mm; color:#4d5761; white-space:pre-wrap; overflow-wrap:anywhere; word-break:break-word;}
+  .print-sheet.has-ar{height:auto; min-height:293mm; overflow:visible;}
   /* Commission / Profit / Extra: one column, bottom-right of the sheet */
   .print-summary{
     position:absolute; right:14mm; bottom:9mm; width:62mm;
@@ -809,9 +839,13 @@ header{flex-wrap:wrap;align-items:center;}
     <div class="col" data-col="6"></div>
   </div>
 
-  <div class="column-remark single-remark">
-    <label for="globalRemark">Remark</label>
-    <textarea id="globalRemark" class="column-remark-input single"></textarea>
+  <div class="remark-row">
+    <div class="column-remark single-remark">
+      <textarea id="globalAdd" class="column-remark-input single" placeholder="ADD" aria-label="ADD"></textarea>
+    </div>
+    <div class="column-remark single-remark">
+      <textarea id="globalRemark" class="column-remark-input single" placeholder="Remarks" aria-label="Remarks"></textarea>
+    </div>
   </div>
 
   <div class="ledger-grid due-grid" id="dueGrid">
@@ -884,6 +918,7 @@ header{flex-wrap:wrap;align-items:center;}
       <tbody id="printRows"></tbody>
     </table>
   </div>
+  <div class="print-ar" id="printAddRemark"></div>
   <div class="print-summary">
     <div class="ps-row"><span>Commission</span><b id="printCommission">৳0</b></div>
     <div class="ps-row"><span>Profit</span><b id="printProfit">৳0</b></div>
@@ -1408,6 +1443,7 @@ function gatherState(){
     state.sections[sec.key] = rows;
   });
   state.remarks.remark = document.getElementById('globalRemark')?.value || '';
+  state.remarks.add = document.getElementById('globalAdd')?.value || '';
   return state;
 }
 
@@ -1428,11 +1464,13 @@ function applyState(state){
   const remark = state.remarks?.remark ?? state.remarks?.cost ?? state.remarks?.cashCount ?? '';
   const remarkEl = document.getElementById('globalRemark');
   if(remarkEl) remarkEl.value = remark || '';
+  const addEl = document.getElementById('globalAdd');
+  if(addEl) addEl.value = state.remarks?.add || '';
   recalc();
 }
 
 function clearForm(){
-  applyState({sections:{}, remarks:{remark:''}});
+  applyState({sections:{}, remarks:{remark:'', add:''}});
 }
 
 function storageKey(dateStr){
@@ -2056,6 +2094,19 @@ function preparePrintSheet(){
   document.getElementById('printCommission').textContent = pm(outNum('outCommission'));
   document.getElementById('printProfit').textContent = pm(outNum('outProfit'));
   document.getElementById('printExtra').textContent = pm(outNum('outExtra'));
+  const addTxt = (document.getElementById('globalAdd')?.value || '').trim();
+  const remTxt = (document.getElementById('globalRemark')?.value || '').trim();
+  // ADD: each line becomes a "+amount" (sums like 50000+2000 are added up); plain text lines print as typed
+  const addLines = addTxt.split(/\n+/).map(l=>l.trim()).filter(Boolean).map(l=>{
+    const r = evalSum(l);
+    if(!r) return l;
+    const v = r.value;
+    return (v < 0 ? '-' : '+') + Math.abs(v).toLocaleString('en-IN', {maximumFractionDigits:2});
+  });
+  const arBox = document.getElementById('printAddRemark');
+  arBox.innerHTML = `<div class="pa-add">${escapePrint(addLines.join('\n'))}</div><div class="pa-rem">${escapePrint(remTxt)}</div>`;
+  arBox.classList.toggle('show', !!(addTxt || remTxt));
+  document.getElementById('printSheet').classList.toggle('has-ar', !!(addTxt || remTxt));
   fitPrintSheet();
 }
 // Keeps the printout on ONE A4 page: measures the sheet with the print styles in a hidden copy and,
@@ -2544,5 +2595,122 @@ searchResults.addEventListener('click', async (e)=>{
 if('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
   window.addEventListener('load', ()=>{ navigator.serviceWorker.register('daily-hisab-sw.js', {scope:'./'}).catch(err=>console.warn('SW register failed', err)); });
 }
+</script>
+
+<script>
+// ---------- Name suggestions from history (Add + Daily Cost notes) ----------
+(function(){
+  const SUGGEST_SECTIONS = ['add','cost'];
+  const history = new Map();               // lowercase name -> {name, count, last}
+  let box = null, items = [], activeIdx = -1, target = null;
+
+  function remember(raw, day){
+    const name = String(raw||'').replace(/\s+/g,' ').trim();
+    if(!name) return;
+    const k = name.toLowerCase();
+    const h = history.get(k);
+    if(h){ h.count++; if(day >= h.last){ h.last = day; h.name = name; } }
+    else history.set(k, {name, count:1, last:day||''});
+  }
+  async function loadHistory(){
+    try{
+      const list = await store.list('shophisab:');
+      const keys = (list && list.keys) || [];
+      history.clear();
+      for(const key of keys){
+        try{
+          const rec = await store.get(key);
+          if(!rec || !rec.value) continue;
+          const st = typeof rec.value === 'string' ? JSON.parse(rec.value) : rec.value;
+          const day = key.replace('shophisab:','');
+          SUGGEST_SECTIONS.forEach(sec=>{
+            ((st.sections && st.sections[sec]) || []).forEach(r=> remember(r && r.note, day));
+          });
+        }catch(e){}
+      }
+    }catch(e){ console.warn('name history skipped', e); }
+  }
+  window.refreshNameHistory = loadHistory;
+
+  function ensureBox(){
+    if(box) return box;
+    box = document.createElement('div');
+    box.className = 'name-suggest';
+    box.setAttribute('role','listbox');
+    box.addEventListener('mousedown', e=> e.preventDefault());      // keep focus in the input
+    box.addEventListener('click', e=>{
+      const el = e.target.closest('.ns-item');
+      if(el) pick(el.dataset.name);
+    });
+    document.body.appendChild(box);
+    return box;
+  }
+  function hide(){ if(box) box.classList.remove('show'); items = []; activeIdx = -1; }
+  function setActive(n){
+    activeIdx = n;
+    [...box.children].forEach((el,i)=> el.classList.toggle('active', i===n));
+    const el = box.children[n]; if(el) el.scrollIntoView({block:'nearest'});
+  }
+  function isTarget(el){
+    return el && el.matches && el.matches('input.note-input') &&
+      SUGGEST_SECTIONS.includes(el.dataset.section) && !el.readOnly;
+  }
+  function esc(t){ return String(t).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+  function show(input){
+    const q = input.value.replace(/\s+/g,' ').trim().toLowerCase();
+    if(!q){ hide(); return; }
+    const found = [];
+    history.forEach((h,k)=>{
+      if(k === q) return;                                   // already typed in full
+      const pos = k.indexOf(q);
+      if(pos < 0) return;
+      found.push({h, starts: pos === 0 ? 0 : 1});
+    });
+    found.sort((a,b)=> a.starts-b.starts || b.h.count-a.h.count || (b.h.last>a.h.last?1:-1) || a.h.name.localeCompare(b.h.name));
+    items = found.slice(0,6).map(x=>x.h);
+    if(!items.length){ hide(); return; }
+    const b = ensureBox();
+    b.innerHTML = items.map(h=>{
+      const k = h.name.toLowerCase(), p = k.indexOf(q);
+      const label = esc(h.name.slice(0,p)) + '<b>' + esc(h.name.slice(p,p+q.length)) + '</b>' + esc(h.name.slice(p+q.length));
+      return `<div class="ns-item" role="option" data-name="${esc(h.name)}"><span>${label}</span><small>${h.count}×</small></div>`;
+    }).join('');
+    const r = input.getBoundingClientRect();
+    b.style.left = Math.max(4, Math.min(r.left, window.innerWidth - 200)) + 'px';
+    b.style.top = (r.bottom + 3) + 'px';
+    b.style.minWidth = Math.max(150, r.width) + 'px';
+    b.classList.add('show');
+    target = input;
+    setActive(-1);
+  }
+  function pick(name){
+    if(!target) return;
+    target.value = name;
+    target.dispatchEvent(new Event('input', {bubbles:true}));   // recalc + autosave
+    hide();
+    target.focus();
+  }
+
+  document.addEventListener('input', e=>{ if(isTarget(e.target)) show(e.target); else if(box && e.target !== target) hide(); });
+  document.addEventListener('focusin', e=>{ if(!isTarget(e.target)) hide(); });
+  document.addEventListener('focusout', e=>{
+    if(isTarget(e.target)){ remember(e.target.value, 'z'); setTimeout(()=>{ if(document.activeElement !== e.target) hide(); }, 120); }
+  });
+  document.addEventListener('keydown', e=>{
+    if(!box || !box.classList.contains('show') || !isTarget(e.target)) return;
+    if(e.key === 'ArrowDown'){ e.preventDefault(); setActive((activeIdx+1) % items.length); }
+    else if(e.key === 'ArrowUp'){ e.preventDefault(); setActive((activeIdx-1+items.length) % items.length); }
+    else if((e.key === 'Enter' || e.key === 'Tab') && activeIdx >= 0){
+      e.preventDefault(); e.stopPropagation(); pick(items[activeIdx].name);
+    }
+    else if(e.key === 'Escape'){ hide(); }
+  }, true);
+  window.addEventListener('scroll', hide, true);
+  window.addEventListener('resize', hide);
+
+  loadHistory();
+  setTimeout(loadHistory, 3000);   // once more, in case storage finished switching after page load
+})();
 </script>
 </body></html>
