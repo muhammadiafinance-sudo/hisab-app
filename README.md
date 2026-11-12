@@ -76,3 +76,10 @@ Before public launch:
 - Admission currently collects a basic application; file upload, payment, SMS and approval/rejection notifications need provider setup.
 - The sample design uses a remote Unsplash hero image and Google Fonts; replace with institution-owned imagery for launch.
 - The website address and contact details are sample placeholders and must be verified.
+
+
+## Updated package layout
+All website files are placed directly in the ZIP root (no enclosing project folder). Each HTML page contains its own inline CSS. The homepage navigation and shortcut cards open separate pages: About, Academics, Notices, Results, Admission, Teachers, Downloads and Contact.
+
+## Admin login
+There is no default username or password in this package. Configure Firebase first, then create an Email/Password user in Firebase Authentication and add `users/{UID}` in Firestore with `{ "role": "admin" }`. Use that email and the password you set in Firebase to sign in at `admin.html`. This avoids shipping a public/shared administrator password.
