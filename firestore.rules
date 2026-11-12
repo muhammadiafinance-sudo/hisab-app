@@ -1,0 +1,29 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function isAdmin() {
+      return signedIn() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin";
+    }
+    // Public read only for explicitly published content. Only administrators can write.
+    match /notices/{id} { allow read: if resource.data.published == true || isAdmin(); allow write: if isAdmin(); }
+    match /results/{id} { allow read: if resource.data.published == true || isAdmin(); allow write: if isAdmin(); }
+    match /teachers/{id} { allow read: if resource.data.published == true || isAdmin(); allow write: if isAdmin(); }
+    match /downloads/{id} { allow read: if resource.data.published == true || isAdmin(); allow write: if isAdmin(); }
+    match /students/{id} { allow read, write: if isAdmin(); }
+    match /admissions/{id} {
+      allow create: if request.resource.data.keys().hasAll(['studentName','fatherName','motherName','level','className','phone','address','status','createdAt'])
+        && request.resource.data.status == "Pending";
+      allow read, update, delete: if isAdmin();
+    }
+    match /messages/{id} {
+      allow create: if request.resource.data.keys().hasAll(['name','contact','message','createdAt','status']);
+      allow read, update, delete: if isAdmin();
+    }
+    match /settings/{id} { allow read: if true; allow write: if isAdmin(); }
+    match /users/{uid} { allow read: if signedIn() && request.auth.uid == uid; allow write: if false; }
+    match /{document=**} { allow read, write: if false; }
+  }
+}
