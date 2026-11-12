@@ -1,0 +1,28 @@
+import { db, firebaseConfigured } from "./firebase.js";
+import { collection, query, where, orderBy, getDocs, addDoc, serverTimestamp, limit } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+const $ = s => document.querySelector(s);
+$("#yearNow").textContent = new Date().getFullYear();
+$("#menuToggle").addEventListener("click",()=>$("#mainNav").classList.toggle("open"));
+$("#mainNav").addEventListener("click",e=>{if(e.target.tagName==="A")$("#mainNav").classList.remove("open")});
+let lang="bn";
+$("#langToggle").addEventListener("click",()=>{lang=lang==="bn"?"en":"bn";document.documentElement.lang=lang;document.querySelectorAll("[data-bn]").forEach(el=>el.textContent=el.dataset[lang]);$("#langToggle").textContent=lang==="bn"?"English":"বাংলা"});
+const msg=(el,text,ok=false)=>{el.textContent=text;el.style.color=ok?"#26845e":"#b34d43"};
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+async function loadPublic(){
+ if(!firebaseConfigured){$("#noticeList").innerHTML='<div class="empty-state">Firebase সংযোগ সেটআপ হলে প্রকাশিত নোটিশ এখানে দেখা যাবে।</div>';return;}
+ try{
+  const nq=query(collection(db,"notices"),where("published","==",true),orderBy("createdAt","desc"),limit(8));
+  const ns=await getDocs(nq);
+  $("#noticeList").innerHTML=ns.empty?'<div class="empty-state">এখনো কোনো নোটিশ প্রকাশিত হয়নি।</div>':ns.docs.map(d=>{const x=d.data(),date=x.createdAt?.toDate?.()||new Date();return `<article class="notice-item"><div class="notice-date"><b>${date.getDate()}</b>${date.toLocaleString("en",{month:"short"}).toUpperCase()}</div><div><h3>${esc(x.title)}</h3><p>${esc(x.category||"General")} · ${esc(x.body||"")}</p></div>${x.fileUrl?`<a href="${esc(x.fileUrl)}" target="_blank" rel="noopener">PDF ↗</a>`:""}</article>`}).join("");
+  const ts=await getDocs(query(collection(db,"teachers"),where("published","==",true),limit(9)));
+  $("#teacherList").innerHTML=ts.empty?'<div class="empty-state">শিক্ষক পরিচিতি শিগগির প্রকাশ করা হবে।</div>':ts.docs.map(d=>{const x=d.data();return `<article class="teacher-card">${x.photoUrl?`<img src="${esc(x.photoUrl)}" alt="">`:""}<h3>${esc(x.name)}</h3><p>${esc(x.designation)} ${x.subject?"· "+esc(x.subject):""}</p></article>`}).join("");
+  const ds=await getDocs(query(collection(db,"downloads"),where("published","==",true),limit(12)));
+  $("#downloadList").innerHTML=ds.empty?'<div class="empty-state">ডাউনলোড ফাইল প্রকাশিত হলে এখানে দেখা যাবে।</div>':ds.docs.map(d=>{const x=d.data();return `<article class="download-card"><h3>${esc(x.title)}</h3><p>${esc(x.category||"Resource")}</p><a href="${esc(x.url)}" target="_blank" rel="noopener">Download ↗</a></article>`}).join("");
+  const settings=await getDocs(collection(db,"settings"));
+  if(!settings.empty){const x=settings.docs[0].data();document.querySelectorAll('[data-setting="phone"]').forEach(e=>e.textContent=x.phone||"তথ্য সংযোজন করুন");document.querySelectorAll('[data-setting="email"]').forEach(e=>e.textContent=x.email||"তথ্য সংযোজন করুন");}
+ }catch(e){console.error(e);$("#noticeList").innerHTML='<div class="empty-state">তথ্য লোড করা যায়নি। Firebase rules ও index configuration যাচাই করুন।</div>';}
+}
+$("#resultForm").addEventListener("submit",async e=>{e.preventDefault();const f=new FormData(e.currentTarget),out=$("#resultOutput");out.textContent="Searching…";if(!firebaseConfigured)return msg(out,"Firebase সংযোগ সেটআপ করা হয়নি।");try{const q=query(collection(db,"results"),where("published","==",true),where("level","==",f.get("level")),where("exam","==",f.get("exam")),where("year","==",Number(f.get("year"))),where("roll","==",String(f.get("roll")).trim()),limit(1));const s=await getDocs(q);if(s.empty)return msg(out,"এই তথ্যের সঙ্গে কোনো প্রকাশিত ফলাফল পাওয়া যায়নি।");const x=s.docs[0].data();out.innerHTML=`<div class="result-slip"><h3>সিংচাপইড় ইসলামিয়া আলিম মাদ্রাসা</h3><b>Examination Result</b><p>Student: ${esc(x.studentName)} | Roll: ${esc(x.roll)}</p><p>Level: ${esc(x.level)} | Class: ${esc(x.className)} | Exam: ${esc(x.exam)} | Year: ${esc(x.year)}</p><h2>GPA: ${esc(x.gpa??"—")} · Grade: ${esc(x.grade??"—")}</h2><p>Marks: ${esc(x.obtainedMarks??"—")} / ${esc(x.totalMarks??"—")}</p>${Array.isArray(x.subjects)?`<table><tr><th>Subject</th><th>Marks</th><th>Grade</th></tr>${x.subjects.map(a=>`<tr><td>${esc(a.subject)}</td><td>${esc(a.marks)}</td><td>${esc(a.grade)}</td></tr>`).join("")}</table>`:""}<button class="btn btn-primary" onclick="window.print()">Print marksheet</button></div>`;}catch(err){console.error(err);msg(out,"ফলাফল অনুসন্ধান করা যায়নি। Firebase configuration/rules/index যাচাই করুন।");}});
+$("#admissionForm").addEventListener("submit",async e=>{e.preventDefault();const out=$("#admissionOutput"),data=Object.fromEntries(new FormData(e.currentTarget));if(!firebaseConfigured)return msg(out,"Firebase সংযোগ সেটআপ করা হয়নি।");try{const ref=await addDoc(collection(db,"admissions"),{...data,status:"Pending",createdAt:serverTimestamp()});msg(out,`আবেদন জমা হয়েছে। আপনার Tracking ID: ${ref.id}`,true);e.currentTarget.reset();}catch(err){console.error(err);msg(out,"আবেদন জমা হয়নি। পরে আবার চেষ্টা করুন।");}});
+$("#contactForm").addEventListener("submit",async e=>{e.preventDefault();const out=$("#contactOutput"),data=Object.fromEntries(new FormData(e.currentTarget));if(!firebaseConfigured)return msg(out,"Firebase সংযোগ সেটআপ করা হয়নি।");try{await addDoc(collection(db,"messages"),{...data,createdAt:serverTimestamp(),status:"New"});msg(out,"আপনার বার্তা জমা হয়েছে। ধন্যবাদ।",true);e.currentTarget.reset();}catch(err){console.error(err);msg(out,"বার্তা পাঠানো যায়নি।");}});
+loadPublic();
