@@ -1,0 +1,35 @@
+GITHUB PAGES DEPLOYMENT — বাংলা নির্দেশনা
+
+১) ZIP ফাইল Extract করুন।
+২) Extract করা singchapair-madrasha-portal ফোল্ডারের ভেতরের সব ফাইল ও ফোল্ডার GitHub repository-র ROOT-এ আপলোড করুন।
+   ROOT-এ index.html, admin.html, assets/, js/, firestore.rules, storage.rules দেখতে হবে।
+   ভুল: repository/singchapair-madrasha-portal/index.html (এক লেভেল বেশি nested)
+   সঠিক: repository/index.html
+
+৩) আগের Daily Hisab / POS repository-তে এই ফাইলগুলো মিশিয়ে দেবেন না।
+   মাদ্রাসার জন্য আলাদা নতুন GitHub repository তৈরি করুন, যেমন singchapair-islamia-website।
+
+৪) GitHub > Settings > Pages:
+   Source: Deploy from a branch
+   Branch: main
+   Folder: / (root)
+   Save করুন। কয়েক মিনিট পর Pages URL তৈরি হবে।
+
+৫) Firebase:
+   js/firebase-config.js ফাইলে Firebase Console থেকে পাওয়া প্রকৃত config বসান।
+   Authentication-এ Email/Password চালু করুন।
+   Firestore ও Storage তৈরি করুন।
+   firestore.rules এবং storage.rules যথাক্রমে Firebase Console-এ Publish করুন।
+   Authentication থেকে admin user তৈরি করে তার UID দিয়ে Firestore users/{UID} document তৈরি করুন:
+   { "role": "admin", "name": "Madrasha Administrator" }
+
+৬) Firebase Authentication > Settings > Authorized domains-এ আপনার GitHub Pages domain যোগ করুন।
+
+গুরুত্বপূর্ণ:
+- CSS না এলে নিশ্চিত করুন assets/style.css ফাইলটি আছে এবং browser-এ
+  https://YOUR-USERNAME.github.io/YOUR-REPO/assets/style.css
+  খুললে CSS code দেখা যায়।
+- JavaScript না এলে js/ ফোল্ডারের সব ফাইল আপলোড হয়েছে কিনা দেখুন।
+- GitHub Pages deploy হওয়া মানেই Firebase সংযুক্ত হয়েছে এমন নয়।
+- লাইভ করার আগে প্রতিষ্ঠানের সঠিক নাম, EIIN, ঠিকানা, ফোন, লোগো ও অন্যান্য তথ্য যাচাই করে বসান।
+- বাস্তব শিক্ষার্থী তথ্য ব্যবহারের আগে Firebase security rules ও admin access পরীক্ষা করুন।
