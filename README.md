@@ -1,85 +1,105 @@
-# Singchapair Islamia Alim Madrasha — Website & Admin Portal
+# সিংচাপইড় ইসলামিয়া আলিম মাদ্রাসা — ওয়েবসাইট ও অ্যাডমিন পোর্টাল
+**Singchapair Islamia Alim Madrasha — Website & Admin Portal**
 
-A bilingual (Bangla/English) Firebase-backed institutional website starter with public information pages, admission applications, result lookup, notices, teacher profiles, downloads and a protected administration portal.
+ষষ্ঠ শ্রেণি থেকে আলিম পর্যন্ত মাদ্রাসার জন্য সম্পূর্ণ ওয়েবসাইট। কোনো সার্ভার বা build লাগে না — GitHub Pages বা Firebase Hosting-এ সরাসরি চলে।
 
-## Included
-- Responsive public website inspired by contemporary university portals (original branding/layout).
-- Bangla/English text toggle.
-- Ebtedayee, Dakhil and Alim academic levels.
-- Public notices, published result lookup and printable marksheet view.
-- Online admission intake with tracking ID.
-- Teacher/staff profiles, downloads and contact messages.
-- Admin authentication using Firebase Authentication.
-- Admin-only dashboard modules for notices, results, admissions, students, teachers, downloads, messages and basic settings.
-- Firestore and Storage security rules.
+## ✨ ফিচারসমূহ
 
-## 1. Create and configure Firebase
-1. Create a Firebase project at https://console.firebase.google.com/.
-2. Register a Web App and copy its configuration.
-3. Replace placeholders in `js/firebase-config.js`.
-4. Enable **Authentication > Email/Password**.
-5. Create a **Cloud Firestore** database and **Storage** bucket.
-6. In Firestore Rules, publish `firestore.rules`. In Storage Rules, publish `storage.rules`.
-7. Add an admin user in Authentication (create the user with a strong password).
-8. In Firestore, create `users/{AUTH_USER_UID}` where the document ID is the admin user's exact UID and fields are:
-   ```json
-   { "role": "admin", "name": "Madrasha Administrator" }
-   ```
-   Do this through Firebase Console or a trusted server environment. The client app intentionally cannot grant itself admin access.
+### পাবলিক ওয়েবসাইট
+| পাতা | কী আছে |
+|---|---|
+| **প্রথম পাতা** (`index.html`) | হিরো ব্যানার, দ্রুত সেবা, স্ক্রলিং নোটিশ, পরিসংখ্যান, নোটিশ বোর্ড, আসন্ন অনুষ্ঠান, অধ্যক্ষের বাণী, শ্রেণিসমূহ, গ্যালারি |
+| **আমাদের সম্পর্কে** | পরিচিতি, ইতিহাস, লক্ষ্য-উদ্দেশ্য, এক নজরে তথ্য (EIIN, কোড), পরিচালনা কমিটি |
+| **একাডেমিক** | ৬ষ্ঠ–আলিম ২য় বর্ষ পর্যন্ত শ্রেণি ও বিষয়, ক্লাস রুটিন, পরীক্ষার সময়সূচি, একাডেমিক ক্যালেন্ডার, গ্রেডিং পদ্ধতি |
+| **ভর্তি** | অনলাইন আবেদন ফরম (ছবিসহ), ট্র্যাকিং আইডি, আবেদনপত্র প্রিন্ট, আবেদনের অবস্থা যাচাই |
+| **ফলাফল** | সাল + পরীক্ষা + শ্রেণি + রোল দিয়ে ফলাফল, বিষয়ভিত্তিক গ্রেড, জিপিএ, মেধাস্থান, প্রিন্টযোগ্য মার্কশিট |
+| **নোটিশ** | অনুসন্ধান, ক্যাটাগরি ফিল্টার, পিন করা নোটিশ, PDF/ছবি সংযুক্তি, শেয়ারযোগ্য লিংক |
+| **শিক্ষকমণ্ডলী** | শিক্ষক / কর্মচারী / কমিটি ট্যাব, বিস্তারিত প্রোফাইল |
+| **গ্যালারি** | অ্যালবামভিত্তিক ছবি, লাইটবক্স |
+| **ডাউনলোড** | ক্যাটাগরিভিত্তিক ফাইল |
+| **যোগাযোগ** | ঠিকানা, ফোন, Google Map, বার্তা পাঠানোর ফরম |
 
-## 2. Run locally
-Because the app uses JavaScript modules, serve the folder through a local web server (not by opening `index.html` as a file). For example:
-```bash
-python -m http.server 8000
-```
-Then visit `http://localhost:8000`. Add the local and production domains to Firebase Authentication > Settings > Authorized domains.
+বাংলা/English মেনু টগল, মোবাইল-বান্ধব ডিজাইন, প্রিন্ট সাপোর্ট।
 
-## 3. Deploy
-You can deploy the folder using Firebase Hosting:
+### অ্যাডমিন পোর্টাল (`admin.html`)
+- **ড্যাশবোর্ড** — পরিসংখ্যান, সাম্প্রতিক আবেদন ও বার্তা, শ্রেণিভিত্তিক শিক্ষার্থী
+- **নোটিশ** — যোগ/সম্পাদনা/মুছুন, পিন, প্রকাশ/অপ্রকাশ, ফাইল আপলোড
+- **ফলাফল** — বিষয়ভিত্তিক নম্বর এন্ট্রি (স্বয়ংক্রিয় গ্রেড ও জিপিএ), Excel/CSV থেকে একসাথে আমদানি, মেধাস্থান নির্ণয়, একসাথে প্রকাশ, টেবুলেশন শিট প্রিন্ট, CSV রপ্তানি
+- **ভর্তি আবেদন** — তালিকা, ফিল্টার, বিস্তারিত, অনুমোদন/বাতিল, মন্তব্য, এক ক্লিকে শিক্ষার্থী তালিকায় যুক্ত, CSV রপ্তানি
+- **শিক্ষার্থী** — তথ্য ব্যবস্থাপনা, স্বয়ংক্রিয় স্টুডেন্ট আইডি, CSV আমদানি/রপ্তানি, **আইডি কার্ড প্রিন্ট**
+- **শিক্ষক ও কমিটি**, **অনুষ্ঠান/ক্যালেন্ডার**, **রুটিন**, **গ্যালারি**, **ডাউনলোড**, **বার্তা**
+- **সেটিংস** — নাম, EIIN, ঠিকানা, ফোন, অধ্যক্ষের বাণী ও ছবি, পরিসংখ্যান, ভর্তি চালু/বন্ধ, শ্রেণিভিত্তিক বিষয় তালিকা
+- **ব্যাকআপ** — সব তথ্য JSON-এ ডাউনলোড ও পুনরুদ্ধার
+
+## 🚦 দুটি মোড
+
+| মোড | কখন | তথ্য কোথায় থাকে |
+|---|---|---|
+| **ডেমো মোড** | `assets/js/config.js`-এ Firebase বসানো না থাকলে | শুধু ওই ব্রাউজারে (অন্য কেউ দেখবে না) — পরীক্ষা করার জন্য |
+| **লাইভ মোড** | Firebase কনফিগারেশন বসালে | Firebase ক্লাউডে — সবাই দেখতে পাবে |
+
+ডেমো মোডে অ্যাডমিন পাসওয়ার্ড: **`admin123`** (লগইনের পর সেটিংস থেকে পরিবর্তন করুন)। নমুনা নোটিশ ও ফলাফল (সাল: চলতি বছর, পরীক্ষা: বার্ষিক, শ্রেণি: ষষ্ঠ, রোল: ১) দেওয়া আছে।
+
+> ⚠️ সত্যিকারের ওয়েবসাইট চালু করতে অবশ্যই **লাইভ মোড (Firebase)** সেটআপ করুন। ডেমো মোডে অ্যাডমিন যা যোগ করবেন তা দর্শকরা দেখতে পাবে না।
+
+## 🔥 Firebase সেটআপ (বিনামূল্যে, ~১৫ মিনিট)
+
+1. https://console.firebase.google.com → **Add project** → নাম দিন (যেমন `singchapair-madrasha`)।
+2. Project Overview → **Web (`</>`)** অ্যাপ যোগ করুন → যে `firebaseConfig` দেখাবে তা কপি করে **`assets/js/config.js`**-এর `FIREBASE` অংশে বসান।
+3. **Build → Authentication → Get started → Email/Password** চালু করুন। **Users → Add user** দিয়ে অ্যাডমিনের ইমেইল ও শক্তিশালী পাসওয়ার্ড তৈরি করুন। তৈরি হওয়া ইউজারের **User UID** কপি করুন।
+4. **Build → Firestore Database → Create database** (Production mode, অঞ্চল `asia-south1`)।
+   - **Rules** ট্যাবে `firestore.rules` ফাইলের সম্পূর্ণ লেখা পেস্ট করে **Publish** করুন।
+   - **Data** ট্যাবে: Start collection → `users` → Document ID = ধাপ ৩-এর **UID** → ফিল্ড `role` (string) = `admin`।
+5. **Build → Storage → Get started** (ছবি/PDF আপলোডের জন্য)। **Rules** ট্যাবে `storage.rules` পেস্ট করে Publish করুন। *(Storage-এর জন্য Blaze প্ল্যান চাইলে, Storage ছাড়াও চলবে — ফাইলের লিংক দিয়ে যোগ করুন, যেমন Google Drive শেয়ার লিংক।)*
+6. **Authentication → Settings → Authorized domains**-এ আপনার ওয়েবসাইটের ডোমেইন যোগ করুন (যেমন `yourname.github.io`)।
+7. `admin.html`-এ ইমেইল-পাসওয়ার্ড দিয়ে লগইন করে **সেটিংস** থেকে প্রতিষ্ঠানের সঠিক তথ্য (EIIN, ঠিকানা, ফোন, অধ্যক্ষের নাম ইত্যাদি) দিন।
+
+ডেমো মোডে কাজ করা তথ্য Firebase-এ নিতে চাইলে: ডেমোতে **ব্যাকআপ → ডাউনলোড**, তারপর লাইভ মোডে **ব্যাকআপ → পুনরুদ্ধার**।
+
+## 🌐 প্রকাশ (Deploy)
+
+**GitHub Pages:** Repository → Settings → Pages → Source: *Deploy from a branch* → Branch: `main`, Folder: `/ (root)` → Save। কয়েক মিনিট পর `https://<username>.github.io/<repo>/` এ সাইট চালু হবে।
+
+**Firebase Hosting:**
 ```bash
 npm install -g firebase-tools
 firebase login
-firebase init hosting
-# Choose the existing Firebase project; set public directory to this folder.
-firebase deploy
+firebase use --add      # প্রজেক্ট বাছাই করুন
+firebase deploy         # hosting + firestore rules + storage rules
 ```
-Review the generated `firebase.json` and ensure the selected public directory contains `index.html`, `admin.html`, `assets/`, and `js/`.
 
-## Firestore collections
-- `users` — admin role records (UID is document ID)
-- `notices` — title, category, body, fileUrl, published, createdAt, createdBy
-- `results` — level, className, exam, year, studentName, roll, registration, totalMarks, obtainedMarks, gpa, grade, subjects[], published, createdAt
-- `admissions` — studentName, fatherName, motherName, level, className, phone, address, status, createdAt
-- `students` — name, studentId, roll, level, className, session, guardianPhone
-- `teachers` — name, designation, subject, photoUrl, bio, published, createdAt
-- `downloads` — title, category, url, published, createdAt
-- `messages` — name, contact, message, status, createdAt
-- `settings/main` — name, phone, email, eiin, address, principalMessage
+**লোকালি চালাতে:** `python3 -m http.server 8000` → http://localhost:8000 (ফাইল সরাসরি ডাবল-ক্লিক করে খুললে কাজ করবে না)।
 
-## Important production checklist
-This is a working foundation, not a verified live deployment. It needs your Firebase project configuration and verified institutional content before it can go online.
+## 📁 ফাইল কাঠামো
+```
+index.html, about.html, academics.html, admission.html, results.html,
+notices.html, teachers.html, gallery.html, downloads.html, contact.html, 404.html
+admin.html                 অ্যাডমিন পোর্টাল
+assets/css/style.css       ওয়েবসাইটের ডিজাইন
+assets/css/admin.css       অ্যাডমিন ডিজাইন
+assets/js/config.js        ⚙️ Firebase কনফিগারেশন ও ডিফল্ট তথ্য
+assets/js/store.js         ডেটা লেয়ার (Firebase / ডেমো)
+assets/js/common.js        শ্রেণি, পরীক্ষা, বিষয়, গ্রেডিং, সহায়ক ফাংশন
+assets/js/site.js          পাবলিক পাতার কার্যক্রম
+assets/js/admin.js         অ্যাডমিন পোর্টাল
+assets/img/logo.svg        লোগো (নিজস্ব লোগো দিয়ে প্রতিস্থাপন করতে পারেন)
+firestore.rules, storage.rules, firebase.json
+```
 
-Before public launch:
-- Confirm the official institution name spelling in Bangla and English, address, EIIN, contact numbers, logo, principal's name/message and approved photos.
-- Configure a trusted admin account and test every role/rule.
-- Add Firestore composite indexes if Firebase prompts for them.
-- Test result uniqueness and correct subject-wise grading against the madrasha's approved grading policy.
-- Add admission document uploads and staff approval workflow if required.
-- Add pagination, CSV import/export, audit logs, automated backups and server-side validation before handling large-scale student records.
-- Do not publish personal student/guardian details or confidential records. Public result publishing must be an explicit administrative action.
-- Configure Firebase App Check, billing alerts, backups and a privacy notice/consent process.
-- Test on mobile and desktop and review accessibility.
+## 📊 ফলাফল কীভাবে কাজ করে
+- গ্রেডিং: ৮০+ A+ (৫.০০), ৭০+ A (৪.০০), ৬০+ A- (৩.৫০), ৫০+ B (৩.০০), ৪০+ C (২.০০), ৩৩+ D (১.০০), ৩৩-এর কম F।
+- জিপিএ = সকল বিষয়ের গ্রেড পয়েন্টের গড়; কোনো বিষয়ে F হলে জিপিএ ০.০০ ও অনুত্তীর্ণ। (৪র্থ/ঐচ্ছিক বিষয়ের বোনাস হিসাব অন্তর্ভুক্ত নয়।)
+- প্রতিটি ফলাফলের আইডি `সাল_পরীক্ষা_শ্রেণি_রোল` — তাই দর্শক শুধু নির্দিষ্ট রোলের **প্রকাশিত** ফলাফল দেখতে পারে; সবার ফলাফলের তালিকা দেখা যায় না।
+- মেধাস্থান: উত্তীর্ণ → জিপিএ → মোট নম্বর অনুযায়ী।
 
-## Current limitations to complete before production
-- Admin lists show the latest records, but bulk import/export, edit-in-place forms and pagination are not yet implemented.
-- Result lookup is keyed to level + exam + year + roll. Add session/class/registration filters if the institution's official result process requires them.
-- Admission currently collects a basic application; file upload, payment, SMS and approval/rejection notifications need provider setup.
-- The sample design uses a remote Unsplash hero image and Google Fonts; replace with institution-owned imagery for launch.
-- The website address and contact details are sample placeholders and must be verified.
+## 🔒 নিরাপত্তা
+- অ্যাডমিন হতে হলে Firestore-এ `users/{UID}` ডকুমেন্টে `role: "admin"` থাকতে হবে — ওয়েবসাইট থেকে কেউ নিজেকে অ্যাডমিন বানাতে পারবে না।
+- শিক্ষার্থী তালিকা শুধু অ্যাডমিন দেখতে পারে। ভর্তি আবেদন শুধু সঠিক ট্র্যাকিং আইডি দিয়ে দেখা যায়।
+- নিয়মিত ব্যাকআপ নিন। শিক্ষার্থী/অভিভাবকের ব্যক্তিগত তথ্য পাবলিক নোটিশে প্রকাশ করবেন না।
 
-
-## Updated package layout
-All website files are placed directly in the ZIP root (no enclosing project folder). Each HTML page contains its own inline CSS. The homepage navigation and shortcut cards open separate pages: About, Academics, Notices, Results, Admission, Teachers, Downloads and Contact.
-
-## Admin login
-There is no default username or password in this package. Configure Firebase first, then create an Email/Password user in Firebase Authentication and add `users/{UID}` in Firestore with `{ "role": "admin" }`. Use that email and the password you set in Firebase to sign in at `admin.html`. This avoids shipping a public/shared administrator password.
+## ✅ লাইভ করার আগে চেকলিস্ট
+- [ ] Firebase কনফিগারেশন বসানো ও অ্যাডমিন লগইন পরীক্ষা
+- [ ] সেটিংসে সঠিক ঠিকানা, EIIN, মাদ্রাসা কোড, ফোন, ইমেইল, অধ্যক্ষের নাম ও ছবি
+- [ ] নমুনা (ডেমো) নোটিশ/অনুষ্ঠান মুছে ফেলা (লাইভ মোডে এগুলো থাকে না)
+- [ ] শিক্ষক তালিকা, গ্যালারির ছবি, রুটিন যোগ
+- [ ] প্রয়োজনে নিজস্ব লোগো `assets/img/logo.svg`-এ

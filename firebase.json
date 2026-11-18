@@ -1,9 +1,9 @@
 {
   "hosting": {
     "public": ".",
-    "ignore": ["firebase.json", "**/.*", "**/node_modules/**", "README.md"],
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**", "README.md", "*.rules"],
     "headers": [
-      { "source": "**/*.@(js|css)", "headers": [{ "key": "Cache-Control", "value": "public,max-age=3600" }] }
+      { "source": "**/*.@(js|css|svg)", "headers": [{ "key": "Cache-Control", "value": "public,max-age=3600" }] }
     ]
   },
   "firestore": { "rules": "firestore.rules" },
