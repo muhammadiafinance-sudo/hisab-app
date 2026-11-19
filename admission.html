@@ -5,46 +5,49 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ভর্তি | সিংচাপইড় ইসলামিয়া আলিম মাদ্রাসা</title>
 <meta name="description" content="সিংচাপইড় ইসলামিয়া আলিম মাদ্রাসায় অনলাইনে ভর্তি আবেদন করুন এবং আবেদনের অবস্থা জানুন।">
-<meta name="theme-color" content="#0d3b33">
+<meta name="theme-color" content="#ffffff">
 <meta property="og:title" content="ভর্তি | সিংচাপইড় ইসলামিয়া আলিম মাদ্রাসা">
 <meta property="og:description" content="সিংচাপইড় ইসলামিয়া আলিম মাদ্রাসায় অনলাইনে ভর্তি আবেদন করুন এবং আবেদনের অবস্থা জানুন।">
 <link rel="icon" href="assets/img/logo.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Noto+Serif+Bengali:wght@600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&family=Noto+Serif+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body data-page="admission">
 <a class="skip" href="#main">মূল বিষয়বস্তুতে যান</a>
 <div id="site-header"></div>
 <main id="main">
-<section class="page-hero"><div class="container"><nav class="crumbs"><a href="index.html">প্রথম পাতা</a> / <span>ভর্তি</span></nav><h1 data-en="Admission">ভর্তি</h1><p>ষষ্ঠ শ্রেণি থেকে আলিম পর্যন্ত অনলাইন ভর্তি আবেদন</p></div></section>
+<section class="page-hero"><div class="container">
+  <nav class="crumbs" aria-label="অবস্থান"><a href="index.html">প্রথম পাতা</a><span>/</span><span aria-current="page">ভর্তি</span></nav>
+  <h1 data-en="Admission">ভর্তি</h1><p>ষষ্ঠ শ্রেণি থেকে আলিম পর্যন্ত অনলাইন ভর্তি আবেদন</p>
+</div></section>
 
 <section class="section"><div class="container grid-2-1">
   <div>
     <div class="card form-card">
-      <div class="sec-head"><div><h2>অনলাইন ভর্তি আবেদন ফরম</h2><p class="muted">শিক্ষাবর্ষ: <b id="admSession"></b> · <span id="admStatusBadge"></span></p></div></div>
+      <div class="form-head"><h2>অনলাইন ভর্তি আবেদন ফরম</h2><p class="muted">শিক্ষাবর্ষ <b id="admSession"></b> <span id="admStatusBadge"></span></p></div>
       <div id="admDone" hidden></div>
       <form id="admForm" novalidate>
         <fieldset><legend>শিক্ষার্থীর তথ্য</legend>
           <div class="form-grid">
-            <label>শিক্ষার্থীর নাম (বাংলায়) *<input name="studentNameBn" required maxlength="80"></label>
-            <label>Student name (English) *<input name="studentName" required maxlength="80" placeholder="IN CAPITAL LETTERS"></label>
-            <label>জন্ম তারিখ *<input name="dob" type="date" required></label>
-            <label>জন্ম নিবন্ধন নম্বর *<input name="birthReg" required inputmode="numeric" pattern="[0-9]{10,17}" title="১০–১৭ অঙ্কের নম্বর (ইংরেজি অঙ্কে)"></label>
-            <label>লিঙ্গ *<select name="gender" required><option value="">—</option><option>ছাত্র</option><option>ছাত্রী</option></select></label>
+            <label>শিক্ষার্থীর নাম (বাংলায়) <em>*</em><input name="studentNameBn" required maxlength="80"></label>
+            <label>Student name (English) <em>*</em><input name="studentName" required maxlength="80" placeholder="IN CAPITAL LETTERS"></label>
+            <label>জন্ম তারিখ <em>*</em><input name="dob" type="date" required></label>
+            <label>জন্ম নিবন্ধন নম্বর <em>*</em><input name="birthReg" required inputmode="numeric" pattern="[0-9]{10,17}" title="১০–১৭ অঙ্কের নম্বর (ইংরেজি অঙ্কে)"></label>
+            <label>লিঙ্গ <em>*</em><select name="gender" required><option value="">নির্বাচন করুন</option><option>ছাত্র</option><option>ছাত্রী</option></select></label>
             <label>রক্তের গ্রুপ<select name="blood"><option value="">জানা নেই</option><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>O+</option><option>O-</option><option>AB+</option><option>AB-</option></select></label>
-            <label>ভর্তিচ্ছু শ্রেণি *<select name="className" required></select></label>
+            <label>ভর্তিচ্ছু শ্রেণি <em>*</em><select name="className" required></select></label>
             <label id="groupWrap" hidden>বিভাগ<select name="group"></select></label>
           </div>
         </fieldset>
         <fieldset><legend>অভিভাবকের তথ্য</legend>
           <div class="form-grid">
-            <label>পিতার নাম *<input name="fatherName" required maxlength="80"></label>
-            <label>মাতার নাম *<input name="motherName" required maxlength="80"></label>
-            <label>অভিভাবকের মোবাইল *<input name="guardianPhone" required type="tel" inputmode="tel" placeholder="01XXXXXXXXX"></label>
+            <label>পিতার নাম <em>*</em><input name="fatherName" required maxlength="80"></label>
+            <label>মাতার নাম <em>*</em><input name="motherName" required maxlength="80"></label>
+            <label>অভিভাবকের মোবাইল <em>*</em><input name="guardianPhone" required type="tel" inputmode="tel" placeholder="01XXXXXXXXX"></label>
             <label>অভিভাবকের পেশা<input name="guardianJob" maxlength="60"></label>
-            <label class="full">বর্তমান ঠিকানা *<textarea name="address" required rows="2" maxlength="300"></textarea></label>
+            <label class="full">বর্তমান ঠিকানা <em>*</em><textarea name="address" required rows="2" maxlength="300"></textarea></label>
             <label class="full">স্থায়ী ঠিকানা<textarea name="permanentAddress" rows="2" maxlength="300"></textarea></label>
           </div>
         </fieldset>
@@ -63,9 +66,9 @@
     </div>
   </div>
   <aside>
-    <div class="card"><h3>📋 ভর্তি তথ্য</h3><p class="pre" id="admInfo"></p><p><b>আবেদনের শেষ তারিখ:</b> <span id="admLast"></span></p></div>
-    <div class="card"><h3>🔎 আবেদনের অবস্থা</h3><form id="trackForm" class="inline-form"><input id="trackId" placeholder="ট্র্যাকিং আইডি, যেমন SIAM26-XXXXXXX" required><button class="btn btn-primary" type="submit">খুঁজুন</button></form><div id="trackOut"></div></div>
-    <div class="card"><h3>✅ ভর্তি প্রক্রিয়া</h3><ol class="steps"><li>অনলাইনে ফরম পূরণ করে জমা দিন</li><li>ট্র্যাকিং আইডি সংরক্ষণ করুন ও আবেদনপত্র প্রিন্ট করুন</li><li>কাগজপত্রসহ মাদ্রাসা অফিসে যোগাযোগ করুন</li><li>প্রয়োজনে ভর্তি পরীক্ষা/সাক্ষাৎকার</li><li>ভর্তি ফি জমা দিয়ে ভর্তি সম্পন্ন করুন</li></ol></div>
+    <div class="card"><h3 class="card-title"><i data-icon="info"></i>ভর্তি তথ্য</h3><p class="pre" id="admInfo"></p><p class="muted small">আবেদনের শেষ তারিখ: <b id="admLast"></b></p></div>
+    <div class="card"><h3 class="card-title"><i data-icon="search"></i>আবেদনের অবস্থা</h3><form id="trackForm" class="inline-form"><input id="trackId" placeholder="ট্র্যাকিং আইডি, যেমন SIAM26-XXXXXXX" required aria-label="ট্র্যাকিং আইডি"><button class="btn btn-primary" type="submit">খুঁজুন</button></form><div id="trackOut"></div></div>
+    <div class="card"><h3 class="card-title"><i data-icon="list"></i>ভর্তি প্রক্রিয়া</h3><ol class="steps"><li>অনলাইনে ফরম পূরণ করে জমা দিন</li><li>ট্র্যাকিং আইডি সংরক্ষণ করুন ও আবেদনপত্র প্রিন্ট করুন</li><li>কাগজপত্রসহ মাদ্রাসা অফিসে যোগাযোগ করুন</li><li>প্রয়োজনে ভর্তি পরীক্ষা/সাক্ষাৎকার</li><li>ভর্তি ফি জমা দিয়ে ভর্তি সম্পন্ন করুন</li></ol></div>
   </aside>
 </div></section>
 
