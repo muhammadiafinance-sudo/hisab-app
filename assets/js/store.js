@@ -1,10 +1,45 @@
-// Data layer: the same API works with Firebase (live, shared) or
-// localStorage (demo mode, only in this browser).
-import { FIREBASE, DEFAULT_SETTINGS, DEMO_DEFAULT_PASSWORD } from "./config.js";
+// Data layer: one API for three back ends.
+//   "api"      — the madrasha's own PHP server (api/index.php)   ← recommended
+//   "firebase" — Google Firebase, if configured in config.js
+//   "demo"     — browser localStorage only (nothing is shared)
+import { FIREBASE, DEFAULT_SETTINGS, DEMO_DEFAULT_PASSWORD, BACKEND, API_URL } from "./config.js";
 
-export const MODE = Object.values(FIREBASE).some(v => !v || String(v).includes("YOUR_")) ? "demo" : "firebase";
 const FB_VER = "10.14.1";
 const LS_KEY = "siam_db_v1";
+const fbConfigured = !Object.values(FIREBASE).some(v => !v || String(v).includes("YOUR_"));
+
+export let MODE = "demo";
+async function detect() {
+  if (BACKEND === "demo") return MODE = "demo";
+  if (BACKEND === "firebase") return MODE = "firebase";
+  if (BACKEND === "auto" || BACKEND === "php") {
+    try {
+      const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 5000);
+      const r = await fetch(API_URL + "?a=ping", { signal: ctl.signal, cache: "no-store", credentials: "same-origin" });
+      clearTimeout(t);
+      const j = await r.json();
+      if (j?.ok && j.data?.backend === "php") return MODE = "api";
+    } catch { /* not a PHP host (e.g. GitHub Pages) */ }
+    if (BACKEND === "php") console.warn("PHP backend not reachable at", API_URL);
+  }
+  return MODE = fbConfigured ? "firebase" : "demo";
+}
+/** Resolves once the back end is known. Every function below awaits it. */
+export const ready = detect();
+
+// ---------------------------------------------------------------- PHP API
+let csrf = null;
+async function api(action, body = {}) {
+  const r = await fetch(API_URL + "?a=" + action, {
+    method: "POST", credentials: "same-origin", cache: "no-store",
+    headers: { "Content-Type": "application/json", ...(csrf ? { "X-CSRF-Token": csrf } : {}) },
+    body: JSON.stringify(body)
+  });
+  let j;
+  try { j = await r.json(); } catch { throw new Error("সার্ভার থেকে সঠিক উত্তর পাওয়া যায়নি (" + r.status + ")"); }
+  if (!j.ok) { const e = new Error(j.error || "Error"); e.status = r.status; throw e; }
+  return j.data;
+}
 
 // ---------------------------------------------------------------- Firebase
 let fbPromise = null;
@@ -26,7 +61,7 @@ function loadLocal() {
 }
 function saveLocal(db) {
   try { localStorage.setItem(LS_KEY, JSON.stringify(db)); }
-  catch (e) { throw new Error("ব্রাউজারের স্টোরেজ পূর্ণ। বড় ছবি মুছে ফেলুন বা Firebase ব্যবহার করুন।"); }
+  catch (e) { throw new Error("ব্রাউজারের স্টোরেজ পূর্ণ। বড় ছবি মুছে ফেলুন বা নিজস্ব সার্ভার ব্যবহার করুন।"); }
 }
 let local = null;
 function L() {
@@ -60,8 +95,11 @@ export function resultId(year, exam, className, roll) {
 
 /** list(col, {publicOnly, where:{field:value}}) → array of {id,...} newest first */
 export async function list(col, opt = {}) {
+  await ready;
   let out;
-  if (MODE === "firebase") {
+  if (MODE === "api") {
+    out = await api("list", { col, publicOnly: !!opt.publicOnly, where: opt.where || {} });
+  } else if (MODE === "firebase") {
     const { fs, D } = await fb();
     const cons = [];
     if (opt.publicOnly) cons.push(fs.where("published", "==", true));
@@ -77,6 +115,8 @@ export async function list(col, opt = {}) {
 }
 
 export async function get(col, id) {
+  await ready;
+  if (MODE === "api") return api("get", { col, id });
   if (MODE === "firebase") {
     const { fs, D } = await fb();
     try {
@@ -89,6 +129,8 @@ export async function get(col, id) {
 }
 
 export async function set(col, id, data, merge = false) {
+  await ready;
+  if (MODE === "api") return api("set", { col, id, data, merge });
   if (MODE === "firebase") {
     const { fs, D } = await fb();
     await fs.setDoc(fs.doc(D, col, id), data, { merge });
@@ -100,7 +142,9 @@ export async function set(col, id, data, merge = false) {
 }
 
 export async function add(col, data) {
+  await ready;
   data = { createdAt: Date.now(), ...data };
+  if (MODE === "api") return api("add", { col, data });
   if (MODE === "firebase") {
     const { fs, D } = await fb();
     return (await fs.addDoc(fs.collection(D, col), data)).id;
@@ -109,6 +153,8 @@ export async function add(col, data) {
 }
 
 export async function update(col, id, data) {
+  await ready;
+  if (MODE === "api") { await api("update", { col, id, data }); return; }
   if (MODE === "firebase") {
     const { fs, D } = await fb();
     await fs.updateDoc(fs.doc(D, col, id), data); return;
@@ -118,6 +164,8 @@ export async function update(col, id, data) {
 }
 
 export async function remove(col, id) {
+  await ready;
+  if (MODE === "api") { await api("remove", { col, id }); return; }
   if (MODE === "firebase") {
     const { fs, D } = await fb();
     await fs.deleteDoc(fs.doc(D, col, id)); return;
@@ -127,6 +175,11 @@ export async function remove(col, id) {
 
 /** Write many docs at once: items = [{col,id,data}] */
 export async function batchSet(items) {
+  await ready;
+  if (MODE === "api") {
+    for (let i = 0; i < items.length; i += 500) await api("batch", { items: items.slice(i, i + 500) });
+    return;
+  }
   if (MODE === "firebase") {
     const { fs, D } = await fb();
     for (let i = 0; i < items.length; i += 400) {
@@ -174,17 +227,33 @@ export function imageToDataUrl(file, max = 900, quality = 0.78) {
     r.readAsDataURL(file);
   });
 }
+function dataUrlToBlob(u) {
+  const [h, b] = u.split(","), bin = atob(b), a = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i);
+  return new Blob([a], { type: h.slice(5, h.indexOf(";")) });
+}
 
-/** Upload a file (admin). Firebase → Storage URL. Demo → data URL (images only). */
+/** Upload a file (admin) → URL. Large photos are shrunk before upload. */
 export async function upload(file, folder = "files") {
-  const isImg = file.type.startsWith("image/");
+  await ready;
+  const isImg = /^image\/(jpeg|png|webp)$/.test(file.type);
+  if (MODE === "api") {
+    const fd = new FormData();
+    if (isImg && file.size > 600 * 1024) fd.append("file", dataUrlToBlob(await imageToDataUrl(file, 1600, 0.82)), file.name.replace(/\.\w+$/, "") + ".jpg");
+    else fd.append("file", file);
+    fd.append("folder", folder);
+    const r = await fetch(API_URL + "?a=upload", { method: "POST", body: fd, credentials: "same-origin", headers: csrf ? { "X-CSRF-Token": csrf } : {} });
+    let j; try { j = await r.json(); } catch { throw new Error("আপলোড ব্যর্থ (" + r.status + ")। ফাইলটি হয়তো সার্ভারের সীমার চেয়ে বড়।"); }
+    if (!j.ok) throw new Error(j.error || "আপলোড ব্যর্থ");
+    return j.data;
+  }
   if (MODE === "firebase") {
     const { st, S } = await fb();
     const r = st.ref(S, `public/${folder}/${Date.now()}_${file.name.replace(/[^\w.\-]+/g, "_")}`);
     await st.uploadBytes(r, file, { contentType: file.type });
     return st.getDownloadURL(r);
   }
-  if (isImg) return imageToDataUrl(file, 1000, 0.75);
+  if (file.type.startsWith("image/")) return imageToDataUrl(file, 1000, 0.75);
   if (file.size > 1.5 * 1024 * 1024) throw new Error("ডেমো মোডে ১.৫ MB-এর বড় ফাইল রাখা যায় না। ফাইলটি Google Drive-এ রেখে লিংক দিন।");
   return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(file); });
 }
@@ -195,48 +264,82 @@ async function sha(t) {
   const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t));
   return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, "0")).join("");
 }
-export async function login(email, password) {
+/** user: username (own server), email (Firebase) or ignored (demo) */
+export async function login(user, password) {
+  await ready;
+  if (MODE === "api") { const r = await api("login", { username: user, password }); csrf = r.csrf; return; }
   if (MODE === "firebase") {
     const { auth, A } = await fb();
-    await auth.signInWithEmailAndPassword(A, email, password);
+    await auth.signInWithEmailAndPassword(A, user, password);
     return;
   }
   const stored = localStorage.getItem("siam_admin_pw") || await sha(DEMO_DEFAULT_PASSWORD);
   if (await sha(password) !== stored) throw new Error("পাসওয়ার্ড সঠিক নয়");
   sessionStorage.setItem(DEMO_SESSION, "1");
 }
-export async function changeDemoPassword(pw) {
-  if (pw.length < 6) throw new Error("পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে");
-  localStorage.setItem("siam_admin_pw", await sha(pw));
+/** First-run: create the first admin account on the own server. */
+export async function setupAdmin(username, password, name) {
+  await ready;
+  const r = await api("setup", { username, password, name }); csrf = r.csrf;
+}
+export async function changePassword(current, pw) {
+  await ready;
+  if (MODE === "api") return api("changePassword", { current, password: pw });
+  if (MODE === "demo") {
+    const stored = localStorage.getItem("siam_admin_pw") || await sha(DEMO_DEFAULT_PASSWORD);
+    if (await sha(current) !== stored) throw new Error("বর্তমান পাসওয়ার্ড ভুল");
+    if (pw.length < 6) throw new Error("পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে");
+    localStorage.setItem("siam_admin_pw", await sha(pw));
+    return;
+  }
+  throw new Error("Firebase Console থেকে পাসওয়ার্ড পরিবর্তন করুন");
 }
 export async function logout() {
+  await ready;
+  if (MODE === "api") { await api("logout").catch(() => { }); csrf = null; location.reload(); return; }
   if (MODE === "firebase") { const { auth, A } = await fb(); await auth.signOut(A); return; }
   sessionStorage.removeItem(DEMO_SESSION); location.reload();
 }
-/** cb(user|null). user = {email, isAdmin} */
+/** cb(user|null, info). user = {email, uid, name, isAdmin}; info.needsSetup on own server */
 export async function onAuth(cb) {
+  await ready;
+  if (MODE === "api") {
+    const r = await api("me");
+    csrf = r.csrf;
+    cb(r.user ? { email: r.user.username, uid: r.user.username, name: r.user.name, isAdmin: r.user.role === "admin" } : null, { needsSetup: r.needsSetup });
+    return;
+  }
   if (MODE === "firebase") {
     const { auth, A, fs, D } = await fb();
     auth.onAuthStateChanged(A, async u => {
-      if (!u) return cb(null);
+      if (!u) return cb(null, {});
       try {
         const r = await fs.getDoc(fs.doc(D, "users", u.uid));
-        cb({ email: u.email, uid: u.uid, isAdmin: r.exists() && r.data().role === "admin" });
-      } catch { cb({ email: u.email, uid: u.uid, isAdmin: false }); }
+        cb({ email: u.email, uid: u.uid, isAdmin: r.exists() && r.data().role === "admin" }, {});
+      } catch { cb({ email: u.email, uid: u.uid, isAdmin: false }, {}); }
     });
     return;
   }
-  cb(sessionStorage.getItem(DEMO_SESSION) ? { email: "demo-admin", uid: "demo", isAdmin: true } : null);
+  cb(sessionStorage.getItem(DEMO_SESSION) ? { email: "demo-admin", uid: "demo", isAdmin: true } : null, {});
 }
 export async function sendReset(email) {
-  if (MODE !== "firebase") throw new Error("ডেমো মোডে প্রযোজ্য নয়");
+  await ready;
+  if (MODE !== "firebase") throw new Error("এই মোডে প্রযোজ্য নয়");
   const { auth, A } = await fb();
   await auth.sendPasswordResetEmail(A, email);
 }
+// Admin account management (own server only)
+export const users = {
+  list: () => api("users"),
+  add: (username, password, name) => api("addUser", { username, password, name }),
+  remove: id => api("deleteUser", { id }),
+  resetPassword: (id, password) => api("resetUserPassword", { id, password })
+};
 
 // ---------------------------------------------------------------- Backup (all modes)
 export const COLLECTIONS = ["notices", "events", "results", "admissions", "students", "teachers", "gallery", "downloads", "routines", "messages", "settings"];
 export async function exportAll() {
+  await ready;
   const out = { exportedAt: new Date().toISOString(), mode: MODE };
   for (const c of COLLECTIONS) out[c] = await list(c);
   return out;

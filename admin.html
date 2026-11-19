@@ -23,13 +23,31 @@
     <p class="muted">সিংচাপইড় ইসলামিয়া আলিম মাদ্রাসা</p>
     <div id="modeNote" class="mode-note"></div>
     <form id="loginForm">
-      <label id="emailWrap">ইমেইল<input name="email" type="email" autocomplete="username"></label>
+      <label id="userWrap"><span id="userLabel">ইউজারনেম</span><input name="user" type="text" autocomplete="username" autocapitalize="none" spellcheck="false"></label>
       <label>পাসওয়ার্ড<input name="password" type="password" required autocomplete="current-password"></label>
       <button class="btn btn-primary btn-lg" type="submit">লগইন</button>
       <p id="loginMsg" class="login-msg" role="alert"></p>
       <button type="button" class="linkish" id="resetBtn" hidden>পাসওয়ার্ড ভুলে গেছেন?</button>
     </form>
     <a class="link" href="index.html">← ওয়েবসাইটে ফিরে যান</a>
+  </div>
+</section>
+
+<!-- First-time setup (own server, no admin yet) -->
+<section id="setupView" class="login-wrap" hidden>
+  <div class="login-card">
+    <div class="login-logo"><img src="assets/img/logo.svg" alt=""></div>
+    <h1>প্রথমবার সেটআপ</h1>
+    <p class="muted">সার্ভার প্রস্তুত। প্রধান অ্যাডমিন অ্যাকাউন্ট তৈরি করুন।</p>
+    <form id="setupForm">
+      <label>আপনার নাম<input name="name" maxlength="120" placeholder="যেমন: অধ্যক্ষ"></label>
+      <label>ইউজারনেম *<input name="username" required minlength="3" maxlength="60" pattern="[A-Za-z0-9._@\-]{3,60}" title="ইংরেজি অক্ষর, সংখ্যা, . _ - @" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="যেমন: admin"></label>
+      <label>পাসওয়ার্ড * <small class="help">কমপক্ষে ৮ অক্ষর</small><input name="password" type="password" required minlength="8" autocomplete="new-password"></label>
+      <label>পাসওয়ার্ড আবার লিখুন *<input name="password2" type="password" required minlength="8" autocomplete="new-password"></label>
+      <button class="btn btn-primary btn-lg" type="submit">অ্যাকাউন্ট তৈরি করুন</button>
+      <p id="setupMsg" class="login-msg" role="alert"></p>
+    </form>
+    <p class="muted small">ইউজারনেম ও পাসওয়ার্ড নিরাপদে লিখে রাখুন।</p>
   </div>
 </section>
 

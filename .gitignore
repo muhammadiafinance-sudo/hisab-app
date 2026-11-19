@@ -1,0 +1,7 @@
+# Live data created by the PHP backend — never commit
+api/data/*
+!api/data/.htaccess
+!api/data/index.html
+api/uploads/*
+!api/uploads/.htaccess
+!api/uploads/index.html

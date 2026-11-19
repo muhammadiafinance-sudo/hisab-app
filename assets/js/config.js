@@ -1,11 +1,16 @@
 // =====================================================================
 //  সাইট কনফিগারেশন / Site configuration
 // ---------------------------------------------------------------------
-//  1) Firebase না বসালে সাইটটি "ডেমো মোডে" চলবে: সব তথ্য শুধু ওই
-//     ব্রাউজারে (localStorage) সংরক্ষিত হবে, অন্য কেউ দেখতে পাবে না।
-//  2) সবার জন্য লাইভ করতে Firebase Console থেকে Web App config এনে
-//     নিচের FIREBASE অবজেক্টে বসান (README.md দেখুন)।
+//  ডেটা কোথায় থাকবে তা স্বয়ংক্রিয়ভাবে ঠিক হয় (BACKEND = "auto"):
+//   1) নিজস্ব সার্ভার (PHP হোস্টিং-এ api/ ফোল্ডার চালু থাকলে) — সুপারিশকৃত
+//   2) Firebase (নিচের FIREBASE অংশ পূরণ করলে)
+//   3) ডেমো মোড — কোনোটিই না থাকলে; তথ্য শুধু ওই ব্রাউজারে থাকে
 // =====================================================================
+
+// "auto" | "php" | "firebase" | "demo"
+export const BACKEND = "auto";
+// Address of the PHP backend, relative to the website pages.
+export const API_URL = "api/index.php";
 
 export const FIREBASE = {
   apiKey: "YOUR_API_KEY",
