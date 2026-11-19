@@ -640,9 +640,9 @@ async function marksheetMod() {
     marksheet: (r, s) => {
       const c = cr(r.subjects);
       return `<div class="marksheet"><div class="ms-head">${LOGO_SVG}<div><h2>${esc(s.nameBn)}</h2><h3>${esc(r.exam)} — ${bnNum(r.year)}</h3></div></div>
-      <table class="ms-info"><tr><th>নাম</th><td>${esc(r.studentName)}</td><th>রোল</th><td>${esc(bnNum(r.roll))}</td></tr><tr><th>পিতা</th><td>${esc(r.fatherName || "—")}</td><th>শ্রেণি</th><td>${esc(r.className)}${r.group ? ` (${esc(r.group)})` : ""}</td></tr></table>
-      <table class="table"><thead><tr><th>বিষয়</th><th>পূর্ণমান</th><th>প্রাপ্ত</th><th>গ্রেড</th><th>GP</th></tr></thead><tbody>${c.rows.map(x => `<tr><td>${esc(x.subject)}</td><td>${bnNum(x.full)}</td><td>${x.marks === "AB" ? "অনুপস্থিত" : bnNum(x.marks)}</td><td>${x.grade}</td><td>${x.gp.toFixed(2)}</td></tr>`).join("")}</tbody></table>
-      <div class="ms-summary"><div><span>মোট</span><b>${bnNum(c.total)}</b></div><div><span>জিপিএ</span><b>${c.gpa.toFixed(2)}</b></div><div><span>গ্রেড</span><b>${c.grade}</b></div>${r.position ? `<div><span>মেধাস্থান</span><b>${bnNum(r.position)}</b></div>` : ""}</div>
+      <dl class="ms-info"><div><dt>নাম</dt><dd>${esc(r.studentName)}</dd></div><div><dt>রোল</dt><dd>${esc(bnNum(r.roll))}</dd></div><div><dt>পিতা</dt><dd>${esc(r.fatherName || "—")}</dd></div><div><dt>শ্রেণি</dt><dd>${esc(r.className)}${r.group ? ` (${esc(r.group)})` : ""}</dd></div></dl>
+      <div class="ms-scroll"><table class="table ms-table"><thead><tr><th>বিষয়</th><th class="num">পূর্ণমান</th><th class="num">প্রাপ্ত</th><th class="num">গ্রেড</th><th class="num">পয়েন্ট</th></tr></thead><tbody>${c.rows.map(x => `<tr class="${x.grade === "F" ? "fail" : ""}"><td>${esc(x.subject)}</td><td class="num">${bnNum(x.full)}</td><td class="num">${x.marks === "AB" ? "অনুপস্থিত" : bnNum(x.marks)}</td><td class="num">${x.grade}</td><td class="num">${bnNum(x.gp.toFixed(2))}</td></tr>`).join("")}</tbody></table></div>
+      <div class="ms-summary"><div><span>মোট</span><b>${bnNum(c.total)}</b></div><div><span>জিপিএ</span><b>${bnNum(c.gpa.toFixed(2))}</b></div><div><span>গ্রেড</span><b>${c.grade}</b></div>${r.position ? `<div><span>মেধাস্থান</span><b>${bnNum(r.position)}</b></div>` : ""}</div>
       <p class="no-print"><a class="btn btn-ghost" href="results.html?year=${encodeURIComponent(r.year)}&exam=${encodeURIComponent(r.exam)}&className=${encodeURIComponent(r.className)}&roll=${encodeURIComponent(r.roll)}" target="_blank">পাবলিক পাতায় দেখুন ${icon("external", "sm")}</a></p></div>`;
     }
   };
