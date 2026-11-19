@@ -1,5 +1,5 @@
 // Public website: shared layout + page-specific behaviour.
-import { $, $$, esc, safeUrl, bnNum, fmtDate, CLASSES, GROUPS, EXAMS, NOTICE_CATS, computeResult, toast, modal, avatar, LOGO_SVG } from "./common.js";
+import { $, $$, esc, safeUrl, bnNum, fmtDate, CLASSES, GROUPS, EXAMS, NOTICE_CATS, computeResult, toast, modal, avatar, LOGO_SVG, icon, hydrateIcons } from "./common.js";
 import * as store from "./store.js";
 
 const page = document.body.dataset.page;
@@ -24,7 +24,7 @@ function renderLayout() {
   if (head) head.innerHTML = `
   <div class="topbar"><div class="container topbar-in">
     <span class="tb-left"><span data-s="phone-line"></span><span data-s="email-line"></span></span>
-    <span class="tb-right"><a href="admin.html" class="tb-admin">🔒 <span data-en="Admin Portal">অ্যাডমিন পোর্টাল</span></a><button class="lang-btn" id="langBtn" type="button">English</button></span>
+    <span class="tb-right"><a href="admin.html" class="tb-admin">${icon("lock")}<span data-en="Admin Portal">অ্যাডমিন পোর্টাল</span></a><button class="lang-btn" id="langBtn" type="button">English</button></span>
   </div></div>
   <header class="site-header"><div class="container header-in">
     <a class="brand" href="index.html">${LOGO_SVG}<span><strong data-s="nameBn">${esc(S.nameBn)}</strong><small data-s="nameEn">${esc(S.nameEn)}</small></span></a>
@@ -40,17 +40,17 @@ function renderLayout() {
       <p class="muted-light">${esc(S.slogan)}</p>
       <p class="muted-light small">${S.eiin ? `EIIN: ${esc(S.eiin)}` : ""}${S.madrasaCode ? ` · মাদ্রাসা কোড: ${esc(S.madrasaCode)}` : ""}${S.estd ? ` · স্থাপিত: ${esc(S.estd)}` : ""}</p></div>
     <div><h4 data-en="Quick links">দ্রুত লিংক</h4><ul>${NAV.slice(1, 6).map(([h, , bn, en]) => `<li><a href="${h}" data-en="${en}">${bn}</a></li>`).join("")}</ul></div>
-    <div><h4 data-en="Resources">তথ্যসেবা</h4><ul>${NAV.slice(6).map(([h, , bn, en]) => `<li><a href="${h}" data-en="${en}">${bn}</a></li>`).join("")}<li><a href="https://www.bmeb.gov.bd" target="_blank" rel="noopener">মাদ্রাসা শিক্ষা বোর্ড ↗</a></li></ul></div>
+    <div><h4 data-en="Resources">তথ্যসেবা</h4><ul>${NAV.slice(6).map(([h, , bn, en]) => `<li><a href="${h}" data-en="${en}">${bn}</a></li>`).join("")}<li><a href="https://www.bmeb.gov.bd" target="_blank" rel="noopener">মাদ্রাসা শিক্ষা বোর্ড ${icon("external", "sm")}</a></li></ul></div>
     <div><h4 data-en="Contact">যোগাযোগ</h4><ul class="contact-list">
-      ${S.address ? `<li>📍 ${esc(S.address)}</li>` : ""}${S.phone ? `<li>📞 <a href="tel:${esc(S.phone)}">${esc(S.phone)}</a></li>` : ""}${S.email ? `<li>✉️ <a href="mailto:${esc(S.email)}">${esc(S.email)}</a></li>` : ""}
+      ${S.address ? `<li>${icon("pin")}<span>${esc(S.address)}</span></li>` : ""}${S.phone ? `<li>${icon("phone")}<a href="tel:${esc(S.phone)}">${esc(S.phone)}</a></li>` : ""}${S.email ? `<li>${icon("mail")}<a href="mailto:${esc(S.email)}">${esc(S.email)}</a></li>` : ""}
       ${!S.address && !S.phone && !S.email ? `<li><a href="contact.html">যোগাযোগ পাতা দেখুন</a></li>` : ""}</ul>
       <div class="socials">${safeUrl(S.facebook) ? `<a href="${esc(safeUrl(S.facebook))}" target="_blank" rel="noopener">Facebook</a>` : ""}${safeUrl(S.youtube) ? `<a href="${esc(safeUrl(S.youtube))}" target="_blank" rel="noopener">YouTube</a>` : ""}</div></div>
   </div>
   <div class="footer-bottom"><div class="container">© ${bnNum(new Date().getFullYear())} ${esc(S.nameBn)} · সর্বস্বত্ব সংরক্ষিত</div></div></footer>
-  ${store.MODE === "demo" ? `<button type="button" class="demo-flag" onclick="this.remove()" title="বন্ধ করতে ক্লিক করুন">ডেমো মোড — তথ্য শুধু এই ব্রাউজারে ✕</button>` : ""}`;
+  ${store.MODE === "demo" ? `<button type="button" class="demo-flag" onclick="this.remove()" title="বন্ধ করতে ক্লিক করুন">ডেমো মোড — তথ্য শুধু এই ব্রাউজারে ${icon("x", "sm")}</button>` : ""}`;
 
-  $$('[data-s="phone-line"]').forEach(e => e.textContent = S.phone ? "📞 " + S.phone : "");
-  $$('[data-s="email-line"]').forEach(e => e.textContent = S.email ? "✉️ " + S.email : "");
+  $$('[data-s="phone-line"]').forEach(e => e.innerHTML = S.phone ? icon("phone") + esc(S.phone) : "");
+  $$('[data-s="email-line"]').forEach(e => e.innerHTML = S.email ? icon("mail") + esc(S.email) : "");
 
   const btn = $("#menuBtn"), nav = $("#mainNav");
   btn?.addEventListener("click", () => { const o = nav.classList.toggle("open"); btn.setAttribute("aria-expanded", o); });
@@ -78,7 +78,7 @@ async function ticker() {
     const n = (await store.list("notices", { publicOnly: true })).slice(0, 6);
     n.forEach(x => items.push(`<a href="notices.html?id=${encodeURIComponent(x.id)}">${esc(x.title)}</a>`));
     if (!items.length) return;
-    $("#tickerMove").innerHTML = items.join('<i>◆</i>') + '<i>◆</i>' + items.join('<i>◆</i>');
+    $("#tickerMove").innerHTML = items.join('<i class="sep"></i>') + '<i class="sep"></i>' + items.join('<i class="sep"></i>');
     $("#ticker").hidden = false;
   } catch (e) { console.warn(e); }
 }
@@ -88,7 +88,7 @@ const noticeItem = x => {
   const d = new Date(x.createdAt || Date.now());
   return `<a class="notice-item" href="notices.html?id=${encodeURIComponent(x.id)}">
     <div class="n-date"><b>${bnNum(d.getDate())}</b><span>${d.toLocaleString("bn-BD", { month: "short" })}</span></div>
-    <div class="n-body"><h3>${x.pinned ? '<span class="pin">📌</span> ' : ""}${esc(x.title)}</h3><p><span class="chip">${esc(x.category || "সাধারণ")}</span> ${fmtDate(x.createdAt)}${x.fileUrl ? ' · <span class="att">📎 সংযুক্তি</span>' : ""}</p></div></a>`;
+    <div class="n-body"><h3>${x.pinned ? `<span class="pin" title="পিন করা">${icon("pinned")}</span>` : ""}${esc(x.title)}</h3><p><span class="chip">${esc(x.category || "সাধারণ")}</span> ${fmtDate(x.createdAt)}${x.fileUrl ? ` · <span class="att">${icon("clip", "sm")}সংযুক্তি</span>` : ""}</p></div></a>`;
 };
 const sortNotices = a => a.sort((x, y) => (y.pinned ? 1 : 0) - (x.pinned ? 1 : 0) || (y.createdAt || 0) - (x.createdAt || 0));
 const empty = t => `<div class="empty">${t}</div>`;
@@ -99,8 +99,8 @@ function showNotice(x) {
   modal(`<span class="chip">${esc(x.category || "সাধারণ")}</span><h2 class="modal-title">${esc(x.title)}</h2>
     <p class="muted">প্রকাশ: ${fmtDate(x.createdAt)}</p><div class="prose">${esc(x.body || "").replace(/\n/g, "<br>")}</div>
     ${u ? (u.startsWith("data:image") || /\.(png|jpe?g|webp|gif)(\?|$)/i.test(u) ? `<img class="notice-img" src="${esc(u)}" alt="">` : "") +
-      `<p><a class="btn btn-primary" href="${esc(u)}" target="_blank" rel="noopener" ${u.startsWith("data:") ? "download" : ""}>📎 সংযুক্তি দেখুন / ডাউনলোড</a></p>` : ""}
-    <p><button class="btn btn-ghost" onclick="window.print()">🖨️ প্রিন্ট</button></p>`, { wide: true });
+      `<p><a class="btn btn-primary" href="${esc(u)}" target="_blank" rel="noopener" ${u.startsWith("data:") ? "download" : ""}>${icon("download")}সংযুক্তি দেখুন / ডাউনলোড</a></p>` : ""}
+    <p><button class="btn btn-ghost" onclick="window.print()">${icon("printer")}প্রিন্ট</button></p>`, { wide: true });
 }
 
 // ---------------------------------------------------------------- Pages
@@ -226,10 +226,10 @@ const pages = {
       try {
         await store.set("admissions", id, rec);
         $("#admDone").hidden = false; f.hidden = true;
-        $("#admDone").innerHTML = `<div class="success-card"><div class="big-check">✓</div><h2>আবেদন সফলভাবে জমা হয়েছে</h2>
+        $("#admDone").innerHTML = `<div class="success-card"><div class="big-check">${icon("check")}</div><h2>আবেদন সফলভাবে জমা হয়েছে</h2>
           <p>আপনার ট্র্যাকিং আইডি সংরক্ষণ করুন:</p><div class="tracking">${id}</div>
           <p class="muted">এই আইডি দিয়ে নিচের "আবেদনের অবস্থা" অংশে খোঁজ নিতে পারবেন। প্রয়োজনীয় কাগজপত্রসহ মাদ্রাসা অফিসে যোগাযোগ করুন।</p>
-          <div class="btn-row"><button class="btn btn-primary" id="printApp">🖨️ আবেদনপত্র প্রিন্ট</button><a class="btn btn-ghost" href="admission.html">নতুন আবেদন</a></div></div>`;
+          <div class="btn-row"><button class="btn btn-primary" id="printApp">${icon("printer")}আবেদনপত্র প্রিন্ট</button><a class="btn btn-ghost" href="admission.html">নতুন আবেদন</a></div></div>`;
         $("#printApp").onclick = () => printApplication({ id, ...rec });
         $("#trackId").value = id;
         window.scrollTo({ top: $("#admDone").offsetTop - 120, behavior: "smooth" });
@@ -242,7 +242,7 @@ const pages = {
       try {
         const a = id ? await store.get("admissions", id) : null;
         if (!a) { out.innerHTML = empty("এই ট্র্যাকিং আইডির কোনো আবেদন পাওয়া যায়নি।"); return; }
-        const st = { Pending: ["অপেক্ষমাণ", "warn"], Approved: ["অনুমোদিত ✓", "ok"], Rejected: ["বাতিল", "no"], Admitted: ["ভর্তি সম্পন্ন ✓", "ok"] }[a.status] || [a.status, "warn"];
+        const st = { Pending: ["অপেক্ষমাণ", "warn"], Approved: ["অনুমোদিত", "ok"], Rejected: ["বাতিল", "no"], Admitted: ["ভর্তি সম্পন্ন", "ok"] }[a.status] || [a.status, "warn"];
         out.innerHTML = `<div class="track-card"><div><b>${esc(a.studentNameBn || a.studentName)}</b><p class="muted">${esc(a.className)} · আবেদন: ${fmtDate(a.createdAt)}</p></div><span class="badge ${st[1]}">${st[0]}</span>${a.adminNote ? `<p class="note">অফিসের মন্তব্য: ${esc(a.adminNote)}</p>` : ""}</div>`;
       } catch (err) { out.innerHTML = errBox(err); }
     });
@@ -263,7 +263,7 @@ const pages = {
       const c = e.target.closest("[data-person]"); if (!c) return;
       const t = all.find(x => x.id === c.dataset.person);
       modal(`<div class="person-modal">${avatar(t.photoUrl, t.name, "avatar xl")}<div><h2 class="modal-title">${esc(t.name)}</h2><p><b>${esc(t.designation)}</b>${t.subject ? " · " + esc(t.subject) : ""}</p>
-        ${t.qualification ? `<p>🎓 ${esc(t.qualification)}</p>` : ""}${t.joinDate ? `<p>📅 যোগদান: ${fmtDate(t.joinDate)}</p>` : ""}${t.phone ? `<p>📞 <a href="tel:${esc(t.phone)}">${esc(t.phone)}</a></p>` : ""}${t.email ? `<p>✉️ ${esc(t.email)}</p>` : ""}
+        ${t.qualification ? `<p class="meta">${icon("cap")}${esc(t.qualification)}</p>` : ""}${t.joinDate ? `<p class="meta">${icon("calendar")}যোগদান: ${fmtDate(t.joinDate)}</p>` : ""}${t.phone ? `<p class="meta">${icon("phone")}<a href="tel:${esc(t.phone)}">${esc(t.phone)}</a></p>` : ""}${t.email ? `<p class="meta">${icon("mail")}${esc(t.email)}</p>` : ""}
         ${t.bio ? `<p class="prose">${esc(t.bio)}</p>` : ""}</div></div>`);
     });
   },
@@ -288,7 +288,7 @@ const pages = {
     try {
       const all = await store.list("downloads", { publicOnly: true });
       const cats = [...new Set(all.map(d => d.category || "অন্যান্য"))];
-      box.innerHTML = all.length ? cats.map(c => `<h3 class="dl-cat">${esc(c)}</h3><div class="dl-grid">${all.filter(d => (d.category || "অন্যান্য") === c).map(d => `<div class="dl-card"><div class="dl-icon">📄</div><div><h4>${esc(d.title)}</h4><p class="muted">${fmtDate(d.createdAt)}</p></div>${linkBtn(d.url, "ডাউনলোড")}</div>`).join("")}</div>`).join("") : empty("ডাউনলোডযোগ্য ফাইল প্রকাশিত হলে এখানে দেখা যাবে।");
+      box.innerHTML = all.length ? cats.map(c => `<h3 class="dl-cat">${esc(c)}</h3><div class="dl-grid">${all.filter(d => (d.category || "অন্যান্য") === c).map(d => `<div class="dl-card"><div class="dl-icon">${icon("file")}</div><div><h4>${esc(d.title)}</h4><p class="muted">${fmtDate(d.createdAt)}</p></div>${linkBtn(d.url, "ডাউনলোড")}</div>`).join("")}</div>`).join("") : empty("ডাউনলোডযোগ্য ফাইল প্রকাশিত হলে এখানে দেখা যাবে।");
     } catch (e) { box.innerHTML = errBox(e); }
   },
 
@@ -313,7 +313,7 @@ const pages = {
 // ---------------------------------------------------------------- Small renderers
 function linkBtn(url, label) {
   const u = safeUrl(url); if (!u) return "";
-  return `<a class="btn btn-sm btn-primary" href="${esc(u)}" target="_blank" rel="noopener" ${u.startsWith("data:") ? "download" : ""}>${label} ↓</a>`;
+  return `<a class="btn btn-sm btn-primary" href="${esc(u)}" target="_blank" rel="noopener" ${u.startsWith("data:") ? "download" : ""}>${icon("download", "sm")}${label}</a>`;
 }
 function eventItem(e) {
   const d = new Date((e.date || "") + "T00:00:00");
@@ -349,20 +349,20 @@ export function marksheet(r) {
     ${r.remarks ? `<p><b>মন্তব্য:</b> ${esc(r.remarks)}</p>` : ""}
     <div class="ms-sign"><span>শ্রেণি শিক্ষক</span><span>পরীক্ষা নিয়ন্ত্রক</span><span>অধ্যক্ষ</span></div>
     <p class="ms-note">এটি অনলাইন কপি। প্রয়োজনে মাদ্রাসা অফিস থেকে সত্যায়িত কপি সংগ্রহ করুন।</p>
-    <div class="no-print btn-row"><button class="btn btn-primary" onclick="window.print()">🖨️ প্রিন্ট / PDF</button></div></div>`;
+    <div class="no-print btn-row"><button class="btn btn-primary" onclick="window.print()">${icon("printer")}প্রিন্ট / PDF</button></div></div>`;
 }
 
 function printApplication(a) {
   const w = window.open("", "_blank");
   if (!w) { toast("পপ-আপ চালু করুন", "err"); return; }
   const row = (k, v) => v ? `<tr><th>${k}</th><td>${esc(v)}</td></tr>` : "";
-  w.document.write(`<!doctype html><html lang="bn"><head><meta charset="utf-8"><title>ভর্তি আবেদন ${esc(a.id)}</title>
-  <style>body{font-family:"Hind Siliguri",sans-serif;max-width:760px;margin:24px auto;color:#111;padding:0 16px}h1,h2{text-align:center;margin:4px}table{width:100%;border-collapse:collapse;margin-top:16px}th,td{border:1px solid #999;padding:7px 10px;text-align:left;vertical-align:top}th{width:34%;background:#f3f3f3}.top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}.ph{width:110px;height:130px;border:1px solid #999;object-fit:cover;display:grid;place-items:center;font-size:12px}.sign{display:flex;justify-content:space-between;margin-top:70px}.sign span{border-top:1px solid #333;padding-top:4px}</style></head><body>
+  w.document.write(`<!doctype html><html lang="bn"><head><meta charset="utf-8"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600&family=Noto+Serif+Bengali:wght@400;600&display=swap"><title>ভর্তি আবেদন ${esc(a.id)}</title>
+  <style>body{font-family:"Noto Sans","SutonnyOMJ","Noto Serif Bengali",sans-serif;max-width:760px;margin:24px auto;color:#111;padding:0 16px}h1,h2{text-align:center;margin:4px}table{width:100%;border-collapse:collapse;margin-top:16px}th,td{border:1px solid #999;padding:7px 10px;text-align:left;vertical-align:top}th{width:34%;background:#f3f3f3}.top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}.ph{width:110px;height:130px;border:1px solid #999;object-fit:cover;display:grid;place-items:center;font-size:12px}.sign{display:flex;justify-content:space-between;margin-top:70px}.sign span{border-top:1px solid #333;padding-top:4px}</style></head><body>
   <h1>${esc(S.nameBn)}</h1><h2 style="font-weight:400">${esc(S.nameEn)}</h2><p style="text-align:center">${esc(S.address || "")}</p><hr>
   <div class="top"><div><h2 style="text-align:left">ভর্তি আবেদন — শিক্ষাবর্ষ ${esc(a.session)}</h2><p>ট্র্যাকিং আইডি: <b>${esc(a.id)}</b><br>তারিখ: ${fmtDate(a.createdAt)}</p></div>${a.photo ? `<img class="ph" src="${a.photo}">` : `<div class="ph">ছবি</div>`}</div>
   <table>${row("শিক্ষার্থীর নাম (বাংলা)", a.studentNameBn)}${row("Student name (English)", a.studentName)}${row("জন্ম তারিখ", a.dob)}${row("জন্ম নিবন্ধন নম্বর", a.birthReg)}${row("লিঙ্গ", a.gender)}${row("রক্তের গ্রুপ", a.blood)}${row("ভর্তিচ্ছু শ্রেণি", a.className)}${row("বিভাগ", a.group)}${row("পিতার নাম", a.fatherName)}${row("মাতার নাম", a.motherName)}${row("অভিভাবকের মোবাইল", a.guardianPhone)}${row("বর্তমান ঠিকানা", a.address)}${row("স্থায়ী ঠিকানা", a.permanentAddress)}${row("পূর্ববর্তী প্রতিষ্ঠান", a.prevInstitution)}${row("সর্বশেষ ফলাফল", a.prevResult)}${row("অন্যান্য তথ্য", a.notes)}</table>
   <div class="sign"><span>অভিভাবকের স্বাক্ষর</span><span>গ্রহণকারীর স্বাক্ষর</span><span>অধ্যক্ষের স্বাক্ষর</span></div>
-  <script>window.onload=()=>window.print()<\/script></body></html>`);
+  <script>window.onload=()=>document.fonts.ready.then(()=>window.print())<\/script></body></html>`);
   w.document.close();
 }
 
@@ -370,6 +370,7 @@ function printApplication(a) {
 (async function boot() {
   try { S = await store.getSettings(); } catch { S = (await import("./config.js")).DEFAULT_SETTINGS; }
   renderLayout();
+  hydrateIcons();
   $$("[data-s-text]").forEach(el => { const v = S[el.dataset.sText]; if (v) el.textContent = v; });
   ticker();
   try { await pages[page]?.(); } catch (e) { console.error(e); }

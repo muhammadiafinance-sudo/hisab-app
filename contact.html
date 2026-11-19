@@ -5,39 +5,42 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>যোগাযোগ | সিংচাপইড় ইসলামিয়া আলিম মাদ্রাসা</title>
 <meta name="description" content="সিংচাপইড় ইসলামিয়া আলিম মাদ্রাসার ঠিকানা, ফোন ও ইমেইল। সরাসরি বার্তা পাঠান।">
-<meta name="theme-color" content="#0d3b33">
+<meta name="theme-color" content="#ffffff">
 <meta property="og:title" content="যোগাযোগ | সিংচাপইড় ইসলামিয়া আলিম মাদ্রাসা">
 <meta property="og:description" content="সিংচাপইড় ইসলামিয়া আলিম মাদ্রাসার ঠিকানা, ফোন ও ইমেইল। সরাসরি বার্তা পাঠান।">
 <link rel="icon" href="assets/img/logo.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Noto+Serif+Bengali:wght@600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&family=Noto+Serif+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body data-page="contact">
 <a class="skip" href="#main">মূল বিষয়বস্তুতে যান</a>
 <div id="site-header"></div>
 <main id="main">
-<section class="page-hero"><div class="container"><nav class="crumbs"><a href="index.html">প্রথম পাতা</a> / <span>যোগাযোগ</span></nav><h1 data-en="Contact Us">যোগাযোগ</h1><p>আমাদের সাথে যোগাযোগ করুন</p></div></section>
+<section class="page-hero"><div class="container">
+  <nav class="crumbs" aria-label="অবস্থান"><a href="index.html">প্রথম পাতা</a><span>/</span><span aria-current="page">যোগাযোগ</span></nav>
+  <h1 data-en="Contact Us">যোগাযোগ</h1><p>আমাদের সাথে যোগাযোগ করুন</p>
+</div></section>
 
 <section class="section"><div class="container grid-2">
   <div>
-    <div class="contact-cards">
-      <div class="card"><span>📍</span><h3>ঠিকানা</h3><p id="cAddress"></p></div>
-      <div class="card"><span>📞</span><h3>ফোন</h3><p id="cPhone"></p></div>
-      <div class="card"><span>✉️</span><h3>ইমেইল</h3><p id="cEmail"></p></div>
-      <div class="card"><span>🕘</span><h3>অফিস সময়</h3><p>শনি – বৃহস্পতি: সকাল ৯টা – বিকাল ৪টা</p></div>
-    </div>
+    <dl class="contact-list-lg">
+      <div><i data-icon="pin"></i><dt>ঠিকানা</dt><dd id="cAddress"></dd></div>
+      <div><i data-icon="phone"></i><dt>ফোন</dt><dd id="cPhone"></dd></div>
+      <div><i data-icon="mail"></i><dt>ইমেইল</dt><dd id="cEmail"></dd></div>
+      <div><i data-icon="clock"></i><dt>অফিস সময়</dt><dd>শনি – বৃহস্পতি, সকাল ৯টা – বিকাল ৪টা</dd></div>
+    </dl>
     <div class="map" id="map"></div>
   </div>
   <div class="card form-card">
     <h2>বার্তা পাঠান</h2>
     <form id="contactForm" class="form-grid">
-      <label>আপনার নাম *<input name="name" required maxlength="80"></label>
-      <label>মোবাইল / ইমেইল *<input name="contact" required maxlength="100"></label>
+      <label>আপনার নাম <em>*</em><input name="name" required maxlength="80"></label>
+      <label>মোবাইল / ইমেইল <em>*</em><input name="contact" required maxlength="100"></label>
       <label class="full">বিষয়<input name="subject" maxlength="120"></label>
-      <label class="full">বার্তা *<textarea name="message" required rows="6" maxlength="2000"></textarea></label>
-      <button class="btn btn-primary btn-lg" type="submit">পাঠান</button>
+      <label class="full">বার্তা <em>*</em><textarea name="message" required rows="6" maxlength="2000"></textarea></label>
+      <div class="full"><button class="btn btn-primary" type="submit">পাঠান</button></div>
     </form>
   </div>
 </div></section>
