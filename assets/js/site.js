@@ -46,8 +46,7 @@ function renderLayout() {
       ${!S.address && !S.phone && !S.email ? `<li><a href="contact.html">যোগাযোগ পাতা দেখুন</a></li>` : ""}</ul>
       <div class="socials">${safeUrl(S.facebook) ? `<a href="${esc(safeUrl(S.facebook))}" target="_blank" rel="noopener">Facebook</a>` : ""}${safeUrl(S.youtube) ? `<a href="${esc(safeUrl(S.youtube))}" target="_blank" rel="noopener">YouTube</a>` : ""}</div></div>
   </div>
-  <div class="footer-bottom"><div class="container">© ${bnNum(new Date().getFullYear())} ${esc(S.nameBn)} · সর্বস্বত্ব সংরক্ষিত</div></div></footer>
-  ${store.MODE === "demo" ? `<button type="button" class="demo-flag" onclick="this.remove()" title="বন্ধ করতে ক্লিক করুন">ডেমো মোড — তথ্য শুধু এই ব্রাউজারে ${icon("x", "sm")}</button>` : ""}`;
+  <div class="footer-bottom"><div class="container">© ${bnNum(new Date().getFullYear())} ${esc(S.nameBn)} · সর্বস্বত্ব সংরক্ষিত</div></div></footer>`;
 
   $$('[data-s="phone-line"]').forEach(e => e.innerHTML = S.phone ? icon("phone") + esc(S.phone) : "");
   $$('[data-s="email-line"]').forEach(e => e.innerHTML = S.email ? icon("mail") + esc(S.email) : "");
@@ -115,18 +114,6 @@ const pages = {
     if (!S.admissionOpen) $("#heroAdmission").textContent = "ভর্তি তথ্য";
     $("#admissionBadge").textContent = S.admissionOpen ? `${bnNum(S.admissionSession)} শিক্ষাবর্ষে ভর্তি চলছে` : "স্বাগতম";
     $("#admSlideTitle").innerHTML = S.admissionOpen ? `${esc(bnNum(S.admissionSession))} শিক্ষাবর্ষে <span>ভর্তি চলছে</span>` : `ভর্তি <span>তথ্য</span>`;
-
-    // ---- quick result search (inside hero)
-    const qf = $("#quickResult"), y = new Date().getFullYear();
-    qf.elements.className.innerHTML = CLASSES.map(c => `<option>${c.name}</option>`).join("");
-    qf.elements.exam.innerHTML = EXAMS.map(c => `<option>${c}</option>`).join("");
-    qf.elements.exam.value = "বার্ষিক পরীক্ষা";
-    qf.elements.year.innerHTML = Array.from({ length: 8 }, (_, i) => `<option value="${y - i}">${bnNum(y - i)}</option>`).join("");
-    qf.addEventListener("submit", e => {
-      e.preventDefault(); if (!qf.reportValidity()) return;
-      const q = new URLSearchParams({ year: qf.elements.year.value, exam: qf.elements.exam.value, className: qf.elements.className.value, roll: qf.elements.roll.value.trim() });
-      location.href = "results.html?" + q;
-    });
 
     // ---- statistics with count-up
     const years = /^\d{4}$/.test(String(S.estd).replace(/[০-৯]/g, d => "০১২৩৪৫৬৭৮৯".indexOf(d))) ? new Date().getFullYear() - Number(String(S.estd).replace(/[০-৯]/g, d => "০১২৩৪৫৬৭৮৯".indexOf(d))) : 0;

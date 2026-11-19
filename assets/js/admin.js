@@ -398,7 +398,6 @@ const VIEWS = {
     const data = Object.fromEntries(await Promise.all(cols.map(async c => [c, await store.list(c)])));
     const pending = data.admissions.filter(a => a.status === "Pending"), newMsg = data.messages.filter(m => m.status === "New");
     view().innerHTML = `
-      ${store.MODE === "demo" ? `<div class="alert warn">${icon("alert")}<div><b>ডেমো মোড চলছে।</b> এখন যা যোগ করবেন তা শুধু এই ব্রাউজারে দেখা যাবে, অন্য দর্শক দেখতে পাবে না। সবার জন্য লাইভ করতে পুরো ওয়েবসাইটটি PHP সাপোর্টেড হোস্টিং-এ (যেমন cPanel) আপলোড করুন — নিজস্ব সার্ভার স্বয়ংক্রিয়ভাবে চালু হবে (README.md দেখুন)। ডেমোর নমুনা তথ্যগুলো মুছে ফেলতে পারেন।</div></div>` : ""}
       <div class="stat-cards">
         ${[["cap", "শিক্ষার্থী", data.students.length, "students"], ["inbox", "অপেক্ষমাণ আবেদন", pending.length, "admissions"], ["bell", "নোটিশ", data.notices.length, "notices"], ["chart", "ফলাফল রেকর্ড", data.results.length, "results"], ["users", "শিক্ষক-কর্মচারী", data.teachers.length, "teachers"], ["mail", "নতুন বার্তা", newMsg.length, "messages"]]
         .map(([i, l, n, k]) => `<a class="stat-card" href="#${k}"><span class="stat-ic">${icon(i)}</span><div><b>${bnNum(n)}</b><small>${l}</small></div></a>`).join("")}
