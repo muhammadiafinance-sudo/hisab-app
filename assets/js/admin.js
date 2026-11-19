@@ -600,6 +600,17 @@ const VIEWS = {
         { name: "admissionOpen", label: "অনলাইন ভর্তি আবেদন চালু", type: "checkbox" }, { name: "admissionSession", label: "শিক্ষাবর্ষ" },
         { name: "admissionLastDate", label: "আবেদনের শেষ তারিখ", type: "date" },
         { name: "admissionInfo", label: "ভর্তি তথ্য ও প্রয়োজনীয় কাগজপত্র", type: "textarea", full: true, rows: 5 }
+      ]],
+      ["ইংরেজি সংস্করণ (দর্শক English বাছলে যা দেখাবে)", [
+        { name: "sloganEn", label: "Slogan (English)", help: "খালি রাখলে ডিফল্ট ইংরেজি লেখা দেখাবে (যদি বাংলা লেখা পরিবর্তন না করে থাকেন)" },
+        { name: "addressEn", label: "Address (English)", full: true },
+        { name: "principalNameEn", label: "Principal's name (English)" }, { name: "principalTitleEn", label: "Principal's title (English)" },
+        { name: "principalMessageEn", label: "Principal's message (English)", type: "textarea", full: true, rows: 4 },
+        { name: "aboutEn", label: "About the institution (English)", type: "textarea", full: true, rows: 3 },
+        { name: "historyEn", label: "History (English)", type: "textarea", full: true, rows: 4 },
+        { name: "missionEn", label: "Mission (English)", type: "textarea", rows: 3 }, { name: "visionEn", label: "Vision (English)", type: "textarea", rows: 3 },
+        { name: "admissionInfoEn", label: "Admission information (English)", type: "textarea", full: true, rows: 4 },
+        { name: "noticeTickerEn", label: "Scrolling message (English)", full: true }
       ]]
     ];
     const all = F.flatMap(g => g[1]);

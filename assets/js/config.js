@@ -58,6 +58,22 @@ export const DEFAULT_SETTINGS = {
   subjects: null // null = use DEFAULT_SUBJECTS from common.js
 };
 
+// English versions of the default texts, shown when a visitor switches the
+// site to English. Admins can write their own English text in Admin → সেটিংস
+// (fields ending in "En"); those always take priority.
+export const DEFAULT_SETTINGS_EN = {
+  slogan: "Knowledge • Morality • Humanity",
+  principalTitle: "Principal",
+  principalMessage:
+    "Assalamu Alaikum wa Rahmatullah. From Class Six to Alim, our madrasha offers religious education based on the Qur'an and Sunnah together with modern general education. Our aim is to raise knowledgeable, upright and patriotic citizens. The support of guardians and well-wishers is the strength of our journey.",
+  about:
+    "Singchapair Islamia Alim Madrasha is an Islamic educational institution under the Bangladesh Madrasah Education Board. Classes are taught from Class Six to Dakhil (Class Ten) and Alim (Classes Eleven and Twelve).",
+  mission: "To build ideal people through modern, up-to-date education in the light of the Qur'an and Sunnah.",
+  vision: "To become the leading educational institution of the area by combining religious and general education.",
+  admissionInfo:
+    "Documents required for admission: a copy of the student's birth registration certificate, a transfer certificate from the previous institution (where applicable), the latest mark sheet, 2 passport-size photos, and a copy of the father's/mother's/guardian's National ID card."
+};
+
 // Demo mode admin password (only used when Firebase is NOT configured).
 // Change it from Admin → সেটিংস after first login.
 export const DEMO_DEFAULT_PASSWORD = "admin123";

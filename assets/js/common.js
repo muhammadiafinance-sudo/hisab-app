@@ -1,14 +1,18 @@
 // Shared constants and helpers used by the public site and admin portal.
+import { getLang } from "./i18n.js";
 export const $ = (s, r = document) => r.querySelector(s);
 export const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 export const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 export const safeUrl = u => { u = String(u || "").trim(); return /^(https?:|data:image\/|data:application\/|\.{0,2}\/|[\w-]+[.\/])/i.test(u) && !/^javascript:/i.test(u) ? u : ""; };
 const BN = "০১২৩৪৫৬৭৮৯";
-export const bnNum = n => String(n ?? "").replace(/\d/g, d => BN[d]);
+// Digits follow the visitor's language (Bangla digits unless the site is in English).
+export const bnNum = n => getLang() === "en" ? String(n ?? "").replace(/[০-৯]/g, d => BN.indexOf(d)) : String(n ?? "").replace(/\d/g, d => BN[d]);
+const LOCALE = () => getLang() === "en" ? "en-GB" : "bn-BD";
+export const monthShort = d => d.toLocaleString(LOCALE(), { month: "short" });
 export const fmtDate = (t, opt = { day: "numeric", month: "long", year: "numeric" }) => {
   if (!t) return "";
   const d = typeof t === "string" && /^\d{4}-\d{2}-\d{2}$/.test(t) ? new Date(t + "T00:00:00") : new Date(t);
-  return isNaN(d) ? "" : (opt.timeStyle ? d.toLocaleString("bn-BD", opt) : d.toLocaleDateString("bn-BD", opt));
+  return isNaN(d) ? "" : (opt.timeStyle ? d.toLocaleString(LOCALE(), opt) : d.toLocaleDateString(LOCALE(), opt));
 };
 
 // ---------------------------------------------------------------- Academic structure

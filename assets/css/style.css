@@ -528,3 +528,9 @@ legend { display: flex; align-items: center; gap: 10px; width: 100%; padding: 0 
   .modal { width: 100%; box-shadow: none; }
   body:has(.modal-bg) main { display: none; }
 }
+
+/* English mode: the English name is the title, so the small English subtitle is redundant;
+   English menu words are wider, so tighten the header a little. */
+html[lang="en"] .site-header .brand small { display: none; }
+html[lang="en"] .site-header .brand strong { font-size: 1.1rem; }
+html[lang="en"] .main-nav a { padding: 8px 10px; font-size: .92rem; }
