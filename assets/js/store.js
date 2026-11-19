@@ -234,6 +234,61 @@ function dataUrlToBlob(u) {
 }
 
 /** Upload a file (admin) → URL. Large photos are shrunk before upload. */
+/** Upload a confidential document (admin only). Returns a reference, not a public link:
+ *  own server → "private:<name>" (served only to admins), Firebase → "fbprivate:<path>",
+ *  demo → data URL kept in this browser. Open it with openPrivate(ref). */
+export async function uploadPrivate(file) {
+  await ready;
+  if (file.size > 15 * 1024 * 1024) throw new Error("ফাইল ১৫ MB-এর বেশি");
+  if (MODE === "api") {
+    const fd = new FormData();
+    const isImg = /^image\/(jpeg|png|webp)$/.test(file.type);
+    if (isImg && file.size > 900 * 1024) fd.append("file", dataUrlToBlob(await imageToDataUrl(file, 2000, 0.85)), file.name.replace(/\.\w+$/, "") + ".jpg");
+    else fd.append("file", file);
+    fd.append("private", "1");
+    const r = await fetch(API_URL + "?a=upload", { method: "POST", body: fd, credentials: "same-origin", headers: csrf ? { "X-CSRF-Token": csrf } : {} });
+    let j; try { j = await r.json(); } catch { throw new Error("আপলোড ব্যর্থ (" + r.status + ")"); }
+    if (!j.ok) throw new Error(j.error || "আপলোড ব্যর্থ");
+    return j.data;
+  }
+  if (MODE === "firebase") {
+    const { st, S } = await fb();
+    const path = `private/staff/${Date.now()}_${file.name.replace(/[^\w.\-]+/g, "_")}`;
+    await st.uploadBytes(st.ref(S, path), file, { contentType: file.type });
+    return "fbprivate:" + path;
+  }
+  if (file.size > 1.5 * 1024 * 1024 && !file.type.startsWith("image/")) throw new Error("ডেমো মোডে ১.৫ MB-এর বড় ফাইল রাখা যায় না।");
+  if (file.type.startsWith("image/")) return imageToDataUrl(file, 1400, 0.8);
+  return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(file); });
+}
+/** Open a confidential document in a new tab (admin only). */
+export async function openPrivate(ref) {
+  await ready;
+  if (!ref) return;
+  const w = window.open("about:blank", "_blank");
+  let url = ref;
+  if (ref.startsWith("private:")) url = API_URL + "?a=file&n=" + encodeURIComponent(ref.slice(8));
+  else if (ref.startsWith("fbprivate:")) { const { st, S } = await fb(); url = await st.getDownloadURL(st.ref(S, ref.slice(10))); }
+  else if (ref.startsWith("data:")) { url = URL.createObjectURL(dataUrlToBlob(ref)); }
+  if (w) w.location.href = url; else location.href = url;
+}
+/** Delete a confidential document that is no longer referenced. */
+export async function removePrivate(ref) {
+  await ready;
+  try {
+    if (ref?.startsWith("private:")) await api("removeFile", { n: ref.slice(8) });
+    else if (ref?.startsWith("fbprivate:")) { const { st, S } = await fb(); await st.deleteObject(st.ref(S, ref.slice(10))); }
+  } catch (e) { console.warn("Could not delete old file", e); }
+}
+/** Image (e.g. the staff photo) that can be shown inline in the admin panel / print. */
+export async function privateImageSrc(ref) {
+  if (!ref) return "";
+  if (ref.startsWith("data:")) return ref;
+  if (ref.startsWith("private:")) return API_URL + "?a=file&n=" + encodeURIComponent(ref.slice(8));
+  if (ref.startsWith("fbprivate:")) { const { st, S } = await fb(); return st.getDownloadURL(st.ref(S, ref.slice(10))); }
+  return "";
+}
+
 export async function upload(file, folder = "files") {
   await ready;
   const isImg = /^image\/(jpeg|png|webp)$/.test(file.type);
@@ -337,7 +392,7 @@ export const users = {
 };
 
 // ---------------------------------------------------------------- Backup (all modes)
-export const COLLECTIONS = ["notices", "events", "results", "admissions", "students", "teachers", "gallery", "downloads", "routines", "messages", "settings"];
+export const COLLECTIONS = ["notices", "events", "results", "admissions", "students", "teachers", "gallery", "downloads", "routines", "messages", "settings", "staffRecords"];
 export async function exportAll() {
   await ready;
   const out = { exportedAt: new Date().toISOString(), mode: MODE };

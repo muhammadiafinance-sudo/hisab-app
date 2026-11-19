@@ -2,6 +2,10 @@
 import { $, $$, esc, safeUrl, bnNum, fmtDate, CLASSES, GROUPS, EXAMS, NOTICE_CATS, DEFAULT_SUBJECTS, subjectsFor, computeResult, toast, modal, avatar, downloadFile, toCSV, parseCSV, LOGO_SVG, icon, hydrateIcons } from "./common.js";
 import * as store from "./store.js";
 import { screenSheet, printSheets } from "./marksheet.js";
+import { openStaffForm, printStaffForms, exportStaffCSV, staffProgress, STAFF_DOCS } from "./staff.js";
+
+let STAFF = {}; // teacherId → private staff record (admin only)
+const loadStaff = async () => { STAFF = Object.fromEntries((await store.list("staffRecords")).map(r => [r.teacherId || r.id, r])); };
 import { DEFAULT_SETTINGS, DEMO_DEFAULT_PASSWORD } from "./config.js";
 
 let S = null, USER = null;
@@ -251,7 +255,8 @@ const RES = {
       { name: "bio", label: "সংক্ষিপ্ত পরিচিতি", type: "textarea", full: true, rows: 3 },
       { name: "published", label: "ওয়েবসাইটে দেখান", type: "checkbox", default: true }
     ],
-    cols: [["", x => avatar(x.photoUrl, x.name)], ["নাম", x => `<b>${esc(x.name)}</b><br><small class="muted">${esc(x.subject || "")}</small>`], ["পদবি", x => esc(x.designation)], ["ধরন", x => ({ teacher: "শিক্ষক", staff: "কর্মচারী", committee: "কমিটি" }[x.category] || "শিক্ষক")], ["ক্রম", x => esc(x.order)], ["অবস্থা", x => yesNo(x.published)]],
+    cols: [["", x => avatar(x.photoUrl, x.name)], ["নাম", x => `<b>${esc(x.name)}</b><br><small class="muted">${esc(x.subject || "")}</small>`], ["পদবি", x => esc(x.designation)], ["ধরন", x => ({ teacher: "শিক্ষক", staff: "কর্মচারী", committee: "কমিটি" }[x.category] || "শিক্ষক")], ["ক্রম", x => esc(x.order)], ["তথ্য ছক", x => { if ((x.category || "teacher") === "committee") return ""; const p = staffProgress(STAFF[x.id]); return `<button type="button" class="badge ${p.done === p.total ? "ok" : p.done ? "warn" : "no"} badge-btn" data-staff="${esc(x.id)}" title="তথ্য ছক খুলুন">${bnNum(p.done)}/${bnNum(p.total)}</button>`; }], ["অবস্থা", x => yesNo(x.published)]],
+    rowActions: x => (x.category || "teacher") === "committee" ? "" : `<button class="icon-btn" data-staff="${esc(x.id)}" title="তথ্য ছক">${icon("idcard")}</button>`,
     filter: { name: "category", label: "ধরন", options: [["", "সব"], ["teacher", "শিক্ষক"], ["staff", "কর্মচারী"], ["committee", "কমিটি"]] },
     sort: (a, b) => (Number(a.order) || 999) - (Number(b.order) || 999), search: x => x.name + " " + x.designation + " " + (x.subject || "")
   },
@@ -290,12 +295,14 @@ function crudView(key) {
   return async function () {
     let all = await store.list(key);
     if (R.sort) all.sort(R.sort);
+    if (key === "teachers") await loadStaff();
     view().innerHTML = `
       <div class="toolbar">
         <div class="search">${icon("search")}<input type="search" id="q" placeholder="খুঁজুন…"></div>
         ${R.filter ? `<select id="flt">${R.filter.options.map(([v, l]) => `<option value="${esc(v)}">${esc(l)}</option>`).join("")}</select>` : ""}
         <span class="spacer"></span>
         ${R.extra ? `<button class="btn btn-ghost" id="impBtn">${icon("upload")}CSV আমদানি</button><button class="btn btn-ghost" id="expBtn">${icon("download")}CSV রপ্তানি</button><button class="btn btn-ghost" id="idBtn">${icon("idcard")}আইডি কার্ড</button>` : ""}
+        ${key === "teachers" ? `<button class="btn btn-ghost" id="staffPrint">${icon("printer")}সব তথ্য ছক প্রিন্ট</button><button class="btn btn-ghost" id="staffCsv">${icon("download")}তথ্য ছক CSV</button>` : ""}
         <button class="btn btn-primary" id="addBtn">${icon("plus")}নতুন ${R.title}</button>
       </div>
       <p class="muted small" id="count"></p>
@@ -311,7 +318,7 @@ function crudView(key) {
       $("#count").textContent = `মোট ${bnNum(f.length)}টি`;
       $("#tbl").innerHTML = f.length ? `<table class="table"><thead><tr>${R.cols.map(c => `<th>${c[0]}</th>`).join("")}<th class="act">কার্যক্রম</th></tr></thead><tbody>${f.map(x => `<tr>${R.cols.map(c => `<td>${c[1](x) ?? ""}</td>`).join("")}<td class="act">
         ${"published" in x || R.fields.some(f => f.name === "published") ? `<button class="icon-btn" data-toggle="${esc(x.id)}" title="${x.published ? "অপ্রকাশ" : "প্রকাশ"} করুন">${icon(x.published ? "eyeOff" : "eye")}</button>` : ""}
-        <button class="icon-btn" data-edit="${esc(x.id)}" title="সম্পাদনা">${icon("edit")}</button><button class="icon-btn danger" data-del="${esc(x.id)}" title="মুছুন">${icon("trash")}</button></td></tr>`).join("")}</tbody></table>` : `<div class="empty">কোনো তথ্য নেই। "+ নতুন ${R.title}" বাটনে ক্লিক করে যোগ করুন।</div>`;
+        ${R.rowActions ? R.rowActions(x) : ""}<button class="icon-btn" data-edit="${esc(x.id)}" title="সম্পাদনা">${icon("edit")}</button><button class="icon-btn danger" data-del="${esc(x.id)}" title="মুছুন">${icon("trash")}</button></td></tr>`).join("")}</tbody></table>` : `<div class="empty">কোনো তথ্য নেই। "+ নতুন ${R.title}" বাটনে ক্লিক করে যোগ করুন।</div>`;
     };
     $("#q").addEventListener("input", draw); $("#flt")?.addEventListener("change", draw); draw();
     const reload = async () => { all = await store.list(key); if (R.sort) all.sort(R.sort); draw(); };
@@ -319,9 +326,23 @@ function crudView(key) {
     $("#tbl").addEventListener("click", async e => {
       const b = e.target.closest("button"); if (!b) return;
       if (b.dataset.edit) editRecord(key, all.find(x => x.id === b.dataset.edit), reload);
-      if (b.dataset.del && confirmDel()) { await store.remove(key, b.dataset.del); toast("মুছে ফেলা হয়েছে"); reload(); }
+      if (b.dataset.staff) { const t = all.find(x => x.id === b.dataset.staff); openStaffForm(t, S, async () => { await loadStaff(); draw(); }); }
+      if (b.dataset.del && confirmDel()) {
+        await store.remove(key, b.dataset.del);
+        if (key === "teachers" && STAFF[b.dataset.del]) {  // also remove the private record and its scanned files
+          const rec = STAFF[b.dataset.del];
+          for (const [k] of STAFF_DOCS) for (const d of rec.docs?.[k] || []) await store.removePrivate(d.ref);
+          await store.remove("staffRecords", b.dataset.del); await loadStaff();
+        }
+        toast("মুছে ফেলা হয়েছে"); reload();
+      }
       if (b.dataset.toggle) { const x = all.find(r => r.id === b.dataset.toggle); await store.update(key, x.id, { published: !x.published }); toast(x.published ? "অপ্রকাশিত করা হয়েছে" : "প্রকাশিত হয়েছে"); reload(); }
     });
+    if (key === "teachers") {
+      const staffOnly = () => filtered().filter(t => (t.category || "teacher") !== "committee");
+      $("#staffPrint").onclick = () => { const f = staffOnly(); if (!f.length) return toast("কোনো শিক্ষক/কর্মচারী নেই", "err"); printStaffForms(f.map(t => ({ teacher: t, rec: STAFF[t.id] || { nameBn: t.name, designation: t.designation } })), S); };
+      $("#staffCsv").onclick = () => exportStaffCSV(staffOnly(), Object.values(STAFF));
+    }
     if (key === "students") {
       $("#expBtn").onclick = () => { downloadFile(`students-${Date.now()}.csv`, toCSV(filtered(), STUDENT_CSV.map(k => [k, x => x[k]])), "text/csv"); };
       $("#impBtn").onclick = () => importStudents(reload);
@@ -332,6 +353,18 @@ function crudView(key) {
 
 function editRecord(key, rec, done) {
   const R = RES[key];
+  if (key === "teachers") {
+    // One form: public profile (website) + private তথ্য ছক (admins only)
+    const pub = {
+      html: R.fields.map(f => fieldHtml(f, rec)).join(""),
+      bind: form => bindFileFields(form, R.folder),
+      read: form => readForm(form, R.fields),
+      validate: form => { const bad = R.fields.map(f => form.elements[f.name]).find(el => el && el.willValidate && !el.checkValidity()); if (bad) { bad.reportValidity(); return false; } return true; },
+      user: USER.email
+    };
+    openStaffForm(rec, S, async () => { await loadStaff(); done?.(); }, pub);
+    return;
+  }
   const recForForm = rec && R.fields.some(f => f.name === "createdAt") ? { ...rec, createdAt: new Date(rec.createdAt || Date.now()).toISOString().slice(0, 10) } : rec;
   const m = modal(`<h2 class="modal-title">${rec ? "সম্পাদনা" : "নতুন " + R.title}</h2>
     <form class="form-grid admin-form">${R.fields.map(f => fieldHtml(f, recForForm)).join("")}

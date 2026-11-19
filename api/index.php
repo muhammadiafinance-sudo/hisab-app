@@ -10,7 +10,9 @@
 declare(strict_types=1);
 
 const API_VERSION = '1.0';
-const COLLECTIONS = ['notices', 'events', 'results', 'admissions', 'students', 'teachers', 'gallery', 'downloads', 'routines', 'messages', 'settings'];
+const COLLECTIONS = ['notices', 'events', 'results', 'admissions', 'students', 'teachers', 'gallery', 'downloads', 'routines', 'messages', 'settings', 'staffRecords'];
+const PRIVATE_DIR = __DIR__ . '/data/private';
+function valid_private_name(string $n): bool { return (bool) preg_match('/^\d{8}_[a-f0-9]{16}\.[a-z0-9]{2,5}$/', $n); }
 const PUBLISHABLE = ['notices', 'events', 'teachers', 'gallery', 'downloads', 'routines'];
 const ADMISSION_FIELDS = ['studentNameBn', 'studentName', 'dob', 'birthReg', 'gender', 'blood', 'className', 'group', 'fatherName', 'motherName', 'guardianPhone', 'guardianJob', 'address', 'permanentAddress', 'prevInstitution', 'prevResult', 'notes', 'photo', 'session'];
 const ADMISSION_REQUIRED = ['studentNameBn', 'studentName', 'fatherName', 'motherName', 'className', 'guardianPhone', 'address'];
@@ -241,6 +243,21 @@ function public_message(array $in): array
 // ===================================================================== Router
 $a = (string) ($_GET['a'] ?? '');
 if ($a === 'ping') out(['backend' => 'php', 'version' => API_VERSION]);
+if ($a === 'file') {
+    // Admin-only download of a confidential document (opened in a new tab by the admin panel).
+    if (!is_admin()) { header('Content-Type: text/plain; charset=utf-8'); http_response_code(401); exit('লগইন প্রয়োজন'); }
+    $n = (string) ($_GET['n'] ?? '');
+    if (!valid_private_name($n) || !is_file(PRIVATE_DIR . "/$n")) { header('Content-Type: text/plain; charset=utf-8'); http_response_code(404); exit('ফাইল পাওয়া যায়নি'); }
+    $ext = strtolower(pathinfo($n, PATHINFO_EXTENSION));
+    $types = ['pdf' => 'application/pdf', 'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png', 'webp' => 'image/webp', 'gif' => 'image/gif'];
+    header('Content-Type: ' . ($types[$ext] ?? 'application/octet-stream'));
+    header('Content-Disposition: ' . (isset($types[$ext]) ? 'inline' : 'attachment') . '; filename="' . $n . '"');
+    header('Content-Length: ' . filesize(PRIVATE_DIR . "/$n"));
+    header('Cache-Control: private, no-store');
+    header('Content-Security-Policy: sandbox');
+    readfile(PRIVATE_DIR . "/$n");
+    exit;
+}
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') fail('Method not allowed', 405);
 
 switch ($a) {
@@ -347,6 +364,15 @@ switch ($a) {
         $ext = strtolower(pathinfo((string) $f['name'], PATHINFO_EXTENSION));
         if (!in_array($ext, $CFG['allowed_ext'], true)) fail('এই ধরনের ফাইল অনুমোদিত নয়');
         if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif'], true) && @getimagesize($f['tmp_name']) === false) fail('ছবিটি সঠিক নয়');
+        if (($_POST['private'] ?? '') === '1') {
+            // Confidential documents (NID, appointment letters…): kept in api/data/private,
+            // which the web server never serves directly; only admins can fetch them via ?a=file.
+            if (!is_dir(PRIVATE_DIR) && !mkdir(PRIVATE_DIR, 0750, true)) fail('আপলোড ফোল্ডার তৈরি করা যায়নি', 500);
+            $name = date('Ymd') . '_' . bin2hex(random_bytes(8)) . '.' . $ext;
+            if (!move_uploaded_file($f['tmp_name'], PRIVATE_DIR . "/$name")) fail('ফাইল সংরক্ষণ করা যায়নি', 500);
+            @chmod(PRIVATE_DIR . "/$name", 0640);
+            out("private:$name");
+        }
         $folder = preg_replace('/[^a-z0-9-]/', '', strtolower((string) ($_POST['folder'] ?? 'files'))) ?: 'files';
         $dir = $CFG['upload_dir'] . '/' . $folder;
         if (!is_dir($dir) && !mkdir($dir, 0755, true)) fail('আপলোড ফোল্ডার তৈরি করা যায়নি', 500);
@@ -354,6 +380,13 @@ switch ($a) {
         if (!move_uploaded_file($f['tmp_name'], "$dir/$name")) fail('ফাইল সংরক্ষণ করা যায়নি', 500);
         @chmod("$dir/$name", 0644);
         out($CFG['upload_url'] . "/$folder/$name");
+    }
+    case 'removeFile': {
+        require_admin();
+        $n = (string) arg('n', '');
+        if (!valid_private_name($n)) fail('Invalid file');
+        @unlink(PRIVATE_DIR . "/$n");
+        out(true);
     }
 
     // ----------------------------------------------------------------- auth
