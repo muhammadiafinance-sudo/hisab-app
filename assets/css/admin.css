@@ -146,4 +146,3 @@ code { padding: 1px 6px; font-family: var(--mono); font-size: .85em; background:
 .settings .panel .form-grid { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
 .sticky-save { position: sticky; bottom: 0; z-index: 5; padding: 14px 0; text-align: right; background: linear-gradient(transparent, var(--subtle) 35%); }
 .err { color: var(--err); }
-.modal .marksheet { margin-top: 0; box-shadow: none; }

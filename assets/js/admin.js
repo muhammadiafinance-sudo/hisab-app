@@ -1,6 +1,7 @@
 // Admin portal
 import { $, $$, esc, safeUrl, bnNum, fmtDate, CLASSES, GROUPS, EXAMS, NOTICE_CATS, DEFAULT_SUBJECTS, subjectsFor, computeResult, toast, modal, avatar, downloadFile, toCSV, parseCSV, LOGO_SVG, icon, hydrateIcons } from "./common.js";
 import * as store from "./store.js";
+import { screenSheet, printSheets } from "./marksheet.js";
 import { DEFAULT_SETTINGS, DEMO_DEFAULT_PASSWORD } from "./config.js";
 
 let S = null, USER = null;
@@ -429,6 +430,7 @@ const VIEWS = {
         <button class="btn btn-sm btn-ghost" id="rPos">${icon("award")}মেধাস্থান নির্ণয়</button>
         <button class="btn btn-sm btn-ghost" id="rPub">${icon("eye")}সব প্রকাশ</button>
         <button class="btn btn-sm btn-ghost" id="rUnpub">${icon("eyeOff")}সব অপ্রকাশ</button>
+        <button class="btn btn-sm btn-ghost" id="rPrintAll">${icon("printer")}সব মার্কশিট প্রিন্ট (A4)</button>
         <button class="btn btn-sm btn-ghost" id="rTab">${icon("printer")}টেবুলেশন শিট</button>
         <button class="btn btn-sm btn-ghost" id="rExp">${icon("download")}CSV রপ্তানি</button>
       </div>
@@ -454,7 +456,7 @@ const VIEWS = {
     $("#rTbl").addEventListener("click", async e => {
       const b = e.target.closest("button"); if (!b) return;
       const r = rows.find(x => x.id === (b.dataset.view || b.dataset.edit || b.dataset.del || b.dataset.toggle));
-      if (b.dataset.view) { const { marksheet } = await marksheetMod(); modal(marksheet(r, S), { wide: true }); }
+      if (b.dataset.view) { const { _c, ...plain } = r; const m = modal(`${screenSheet(plain, S)}<div class="form-actions"><a class="btn btn-ghost" target="_blank" href="results.html?${new URLSearchParams({ year: r.year, exam: r.exam, className: r.className, roll: r.roll })}">পাবলিক পাতায় দেখুন ${icon("external", "sm")}</a><button type="button" class="btn btn-primary" data-ps>${icon("printer")}প্রিন্ট (A4)</button></div>`, { wide: true }); $("[data-ps]", m.el).onclick = () => printSheets([plain], S); }
       if (b.dataset.edit) editResult(r, combo(), load);
       if (b.dataset.del && confirmDel("এই ফলাফল")) { await store.remove("results", r.id); toast("মুছে ফেলা হয়েছে"); load(); }
       if (b.dataset.toggle) { await store.update("results", r.id, { published: !r.published }); load(); }
@@ -472,6 +474,7 @@ const VIEWS = {
       bulk((d, r) => ({ ...d, position: pos.get(r.id) }), "মেধাস্থান নির্ণয় করা হয়েছে (জিপিএ, তারপর মোট নম্বর অনুযায়ী)");
     };
     $("#rTab").onclick = () => printTabulation(rows, combo());
+    $("#rPrintAll").onclick = () => { if (!rows.length) return toast("কোনো ফলাফল নেই", "err"); printSheets(rows.map(({ _c, ...plain }) => plain), S); };
     $("#rExp").onclick = () => {
       const subs = [...new Set(rows.flatMap(r => r.subjects.map(s => s.subject)))];
       downloadFile(`result-${combo().className}-${combo().exam}-${combo().year}.csv`, toCSV(rows, [["roll", r => r.roll], ["studentName", r => r.studentName], ["fatherName", r => r.fatherName], ...subs.map(s => [s, r => r.subjects.find(x => x.subject === s)?.marks ?? ""]), ["total", r => r._c.total], ["gpa", r => r._c.gpa.toFixed(2)], ["grade", r => r._c.grade], ["position", r => r.position || ""]]), "text/csv");
@@ -633,21 +636,6 @@ const VIEWS = {
 };
 
 // ===================================================================== Results editor
-async function marksheetMod() {
-  // Re-use the public marksheet renderer without loading the whole site script.
-  const { computeResult: cr } = await import("./common.js");
-  return {
-    marksheet: (r, s) => {
-      const c = cr(r.subjects);
-      return `<div class="marksheet"><div class="ms-head">${LOGO_SVG}<div><h2>${esc(s.nameBn)}</h2><h3>${esc(r.exam)} — ${bnNum(r.year)}</h3></div></div>
-      <dl class="ms-info"><div><dt>নাম</dt><dd>${esc(r.studentName)}</dd></div><div><dt>রোল</dt><dd>${esc(bnNum(r.roll))}</dd></div><div><dt>পিতা</dt><dd>${esc(r.fatherName || "—")}</dd></div><div><dt>শ্রেণি</dt><dd>${esc(r.className)}${r.group ? ` (${esc(r.group)})` : ""}</dd></div></dl>
-      <div class="ms-scroll"><table class="table ms-table"><thead><tr><th>বিষয়</th><th class="num">পূর্ণমান</th><th class="num">প্রাপ্ত</th><th class="num">গ্রেড</th><th class="num">পয়েন্ট</th></tr></thead><tbody>${c.rows.map(x => `<tr class="${x.grade === "F" ? "fail" : ""}"><td>${esc(x.subject)}</td><td class="num">${bnNum(x.full)}</td><td class="num">${x.marks === "AB" ? "অনুপস্থিত" : bnNum(x.marks)}</td><td class="num">${x.grade}</td><td class="num">${bnNum(x.gp.toFixed(2))}</td></tr>`).join("")}</tbody></table></div>
-      <div class="ms-summary"><div><span>মোট</span><b>${bnNum(c.total)}</b></div><div><span>জিপিএ</span><b>${bnNum(c.gpa.toFixed(2))}</b></div><div><span>গ্রেড</span><b>${c.grade}</b></div>${r.position ? `<div><span>মেধাস্থান</span><b>${bnNum(r.position)}</b></div>` : ""}</div>
-      <p class="no-print"><a class="btn btn-ghost" href="results.html?year=${encodeURIComponent(r.year)}&exam=${encodeURIComponent(r.exam)}&className=${encodeURIComponent(r.className)}&roll=${encodeURIComponent(r.roll)}" target="_blank">পাবলিক পাতায় দেখুন ${icon("external", "sm")}</a></p></div>`;
-    }
-  };
-}
-
 function editResult(rec, combo, done) {
   const base = rec || { ...combo, roll: "", studentName: "", fatherName: "", group: "", remarks: "", published: false, subjects: subjectsFor(S, combo.className).map(s => ({ subject: s, full: 100, marks: "" })) };
   const m = modal(`<h2 class="modal-title">${rec ? "ফলাফল সম্পাদনা" : "নতুন ফলাফল"}</h2>
