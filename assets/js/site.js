@@ -381,12 +381,16 @@ export function marksheet(r) {
   const c = computeResult(r.subjects);
   return `<div class="marksheet print-area">
     <div class="ms-head">${LOGO_SVG}<div><h2>${esc(S.nameBn)}</h2><p>${esc(S.nameEn)}${S.address ? " · " + esc(S.address) : ""}</p><h3>${esc(r.exam)} — ${bnNum(r.year)}</h3><span class="ms-tag">একাডেমিক ট্রান্সক্রিপ্ট</span></div></div>
-    <table class="ms-info"><tr><th>শিক্ষার্থীর নাম</th><td>${esc(r.studentName)}</td><th>রোল</th><td>${esc(bnNum(r.roll))}</td></tr>
-    <tr><th>পিতার নাম</th><td>${esc(r.fatherName || "—")}</td><th>শ্রেণি</th><td>${esc(r.className)}${r.group ? " (" + esc(r.group) + ")" : ""}</td></tr></table>
-    <table class="table ms-table"><thead><tr><th>#</th><th>বিষয়</th><th>পূর্ণমান</th><th>প্রাপ্ত নম্বর</th><th>গ্রেড</th><th>গ্রেড পয়েন্ট</th></tr></thead>
-    <tbody>${c.rows.map((s, i) => `<tr class="${s.grade === "F" ? "fail" : ""}"><td>${bnNum(i + 1)}</td><td>${esc(s.subject)}</td><td>${bnNum(s.full)}</td><td>${s.marks === "AB" ? "অনুপস্থিত" : bnNum(s.marks)}</td><td><b>${s.grade}</b></td><td>${s.gp.toFixed(2)}</td></tr>`).join("")}</tbody>
-    <tfoot><tr><th colspan="2">মোট</th><th>${bnNum(c.fullTotal)}</th><th>${bnNum(c.total)}</th><th colspan="2"></th></tr></tfoot></table>
-    <div class="ms-summary"><div><span>জিপিএ</span><b>${c.gpa.toFixed(2)}</b></div><div><span>গ্রেড</span><b>${c.grade}</b></div><div><span>ফলাফল</span><b class="${c.passed ? "pass" : "failc"}">${c.passed ? "উত্তীর্ণ" : "অনুত্তীর্ণ"}</b></div>${r.position ? `<div><span>মেধাস্থান</span><b>${bnNum(r.position)}</b></div>` : ""}</div>
+    <dl class="ms-info">
+      <div><dt>শিক্ষার্থীর নাম</dt><dd>${esc(r.studentName)}</dd></div>
+      <div><dt>রোল</dt><dd>${esc(bnNum(r.roll))}</dd></div>
+      <div><dt>পিতার নাম</dt><dd>${esc(r.fatherName || "—")}</dd></div>
+      <div><dt>শ্রেণি</dt><dd>${esc(r.className)}${r.group ? " (" + esc(r.group) + ")" : ""}</dd></div>
+    </dl>
+    <div class="ms-scroll"><table class="table ms-table"><thead><tr><th class="hide-sm">#</th><th>বিষয়</th><th class="num">পূর্ণমান</th><th class="num">প্রাপ্ত</th><th class="num">গ্রেড</th><th class="num">পয়েন্ট</th></tr></thead>
+    <tbody>${c.rows.map((s, i) => `<tr class="${s.grade === "F" ? "fail" : ""}"><td class="hide-sm">${bnNum(i + 1)}</td><td>${esc(s.subject)}</td><td class="num">${bnNum(s.full)}</td><td class="num">${s.marks === "AB" ? "অনুপস্থিত" : bnNum(s.marks)}</td><td class="num"><b>${s.grade}</b></td><td class="num">${bnNum(s.gp.toFixed(2))}</td></tr>`).join("")}</tbody>
+    <tfoot><tr><th class="hide-sm"></th><th>মোট</th><th class="num">${bnNum(c.fullTotal)}</th><th class="num">${bnNum(c.total)}</th><th colspan="2"></th></tr></tfoot></table></div>
+    <div class="ms-summary"><div><span>জিপিএ</span><b>${bnNum(c.gpa.toFixed(2))}</b></div><div><span>গ্রেড</span><b>${c.grade}</b></div><div><span>ফলাফল</span><b class="${c.passed ? "pass" : "failc"}">${c.passed ? "উত্তীর্ণ" : "অনুত্তীর্ণ"}</b></div>${r.position ? `<div><span>মেধাস্থান</span><b>${bnNum(r.position)}</b></div>` : ""}</div>
     ${r.remarks ? `<p><b>মন্তব্য:</b> ${esc(r.remarks)}</p>` : ""}
     <div class="ms-sign"><span>শ্রেণি শিক্ষক</span><span>পরীক্ষা নিয়ন্ত্রক</span><span>অধ্যক্ষ</span></div>
     <p class="ms-note">এটি অনলাইন কপি। প্রয়োজনে মাদ্রাসা অফিস থেকে সত্যায়িত কপি সংগ্রহ করুন।</p>
