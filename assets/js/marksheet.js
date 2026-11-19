@@ -2,6 +2,7 @@
 // for printing. Printing always produces exactly one A4 page per student — if a
 // sheet has many subjects the text is shrunk step by step until it fits.
 import { esc, bnNum, fmtDate, computeResult, GRADE_SCALE, LOGO_SVG } from "./common.js";
+import { tr, trHTML, L, isEn } from "./i18n.js";
 
 const FONTS = "https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&family=Noto+Serif+Bengali:wght@400;500;600;700&display=swap";
 
@@ -93,31 +94,31 @@ function verifyUrl(r) {
 export function sheetHTML(r, S, mode = "screen") {
   const c = computeResult(r.subjects);
   const pct = c.fullTotal ? (c.total / c.fullTotal) * 100 : 0;
-  const info = [["শিক্ষার্থীর নাম", r.studentName], ["রোল নম্বর", bnNum(r.roll)], ["পিতার নাম", r.fatherName || "—"], ["শ্রেণি", r.className + (r.group ? ` (${r.group})` : "")], ["পরীক্ষা", r.exam], ["শিক্ষাবর্ষ", bnNum(r.year)]];
-  const sum = [["মোট নম্বর", `${bnNum(c.total)}/${bnNum(c.fullTotal)}`], ["শতকরা", bnNum(pct.toFixed(1)) + "%"], ["জিপিএ", bnNum(c.gpa.toFixed(2))], ["লেটার গ্রেড", c.grade], ["ফলাফল", `<span class="${c.passed ? "pass" : "fail"}">${c.passed ? "উত্তীর্ণ" : "অনুত্তীর্ণ"}</span>`]];
+  const info = [["শিক্ষার্থীর নাম", r.studentName], ["রোল নম্বর", bnNum(r.roll)], ["পিতার নাম", r.fatherName || "—"], ["শ্রেণি", tr(r.className) + (r.group ? ` (${tr(r.group)})` : "")], ["পরীক্ষা", tr(r.exam)], ["শিক্ষাবর্ষ", bnNum(r.year)]];
+  const sum = [["মোট নম্বর", `${bnNum(c.total)}/${bnNum(c.fullTotal)}`], ["শতকরা", bnNum(pct.toFixed(1)) + "%"], ["জিপিএ", bnNum(c.gpa.toFixed(2))], ["লেটার গ্রেড", c.grade], [L("ফলাফল", "Result"), `<span class="${c.passed ? "pass" : "fail"}">${c.passed ? "উত্তীর্ণ" : "অনুত্তীর্ণ"}</span>`]];
   if (r.position) sum.push(["মেধাস্থান", bnNum(r.position)]);
   const ids = [S.eiin ? `EIIN: ${esc(S.eiin)}` : "", S.madrasaCode ? `মাদ্রাসা কোড: ${esc(S.madrasaCode)}` : ""].filter(Boolean).join(" · ");
   const url = verifyUrl(r);
-  return `<article class="rs ${mode}"><div class="rs-frame"><div class="rs-inner">
+  return trHTML(`<article class="rs ${mode}"><div class="rs-frame"><div class="rs-inner">
     <i class="rs-c tl"></i><i class="rs-c tr"></i><i class="rs-c bl"></i><i class="rs-c br"></i>
     <div class="rs-wm" aria-hidden="true">${LOGO_SVG}</div>
     <header class="rs-head">
       ${LOGO_SVG}
-      <div><p class="rs-bis" lang="ar">بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيْمِ</p><h2 class="rs-name">${esc(S.nameBn)}</h2><p class="rs-en">${esc(S.nameEn)}</p>${S.address || ids ? `<p class="rs-addr">${esc(S.address || "")}${S.address && ids ? " · " : ""}${ids}</p>` : ""}</div>
+      <div><p class="rs-bis" lang="ar">بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيْمِ</p><h2 class="rs-name">${esc(S.nameBn)}</h2>${isEn() ? "" : `<p class="rs-en">${esc(S.nameEn)}</p>`}${S.address || ids ? `<p class="rs-addr">${esc(S.address || "")}${S.address && ids ? " · " : ""}${ids}</p>` : ""}</div>
       <div class="rs-medal"><small>জিপিএ</small><b>${bnNum(c.gpa.toFixed(2))}</b><i>${c.grade}</i></div>
     </header>
-    <div class="rs-ribbon"><span>একাডেমিক ট্রান্সক্রিপ্ট</span><em>${esc(r.exam)} — ${bnNum(r.year)}</em></div>
+    <div class="rs-ribbon"><span>একাডেমিক ট্রান্সক্রিপ্ট</span><em>${esc(tr(r.exam))} — ${bnNum(r.year)}</em></div>
     <dl class="rs-info">${info.map(([k, v]) => `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join("")}</dl>
     <table class="rs-table"><thead><tr><th class="sl">ক্রম</th><th>বিষয়</th><th class="n">পূর্ণমান</th><th class="n">প্রাপ্ত নম্বর</th><th class="n">লেটার গ্রেড</th><th class="n">গ্রেড পয়েন্ট</th></tr></thead>
-      <tbody>${c.rows.map((s, i) => `<tr class="${s.grade === "F" ? "f" : ""}"><td class="sl">${bnNum(i + 1)}</td><td>${esc(s.subject)}</td><td class="n">${bnNum(s.full)}</td><td class="n">${s.marks === "AB" ? "অনুপস্থিত" : bnNum(s.marks)}</td><td class="n"><span class="rs-grade">${s.grade}</span></td><td class="n">${bnNum(s.gp.toFixed(2))}</td></tr>`).join("")}</tbody>
+      <tbody>${c.rows.map((s, i) => `<tr class="${s.grade === "F" ? "f" : ""}"><td class="sl">${bnNum(i + 1)}</td><td>${esc(tr(s.subject))}</td><td class="n">${bnNum(s.full)}</td><td class="n">${s.marks === "AB" ? "অনুপস্থিত" : bnNum(s.marks)}</td><td class="n"><span class="rs-grade">${s.grade}</span></td><td class="n">${bnNum(s.gp.toFixed(2))}</td></tr>`).join("")}</tbody>
       <tfoot><tr><td class="sl"></td><td>সর্বমোট</td><td class="n">${bnNum(c.fullTotal)}</td><td class="n">${bnNum(c.total)}</td><td class="n">${c.grade}</td><td class="n">${bnNum(c.gpa.toFixed(2))}</td></tr></tfoot></table>
     <div class="rs-sum" style="--cols:${sum.length}">${sum.map(([k, v]) => `<div><span>${k}</span><b>${v}</b></div>`).join("")}</div>
     <div class="rs-bottom">
       <table class="rs-scale"><caption>গ্রেডিং পদ্ধতি</caption><tr><th>নম্বর</th>${GRADE_SCALE.map(([min], i) => `<td>${bnNum(i === 0 ? "৮০+" : min + "–" + (GRADE_SCALE[i - 1][0] - 1))}</td>`).join("")}</tr><tr><th>গ্রেড</th>${GRADE_SCALE.map(([, g]) => `<td>${g}</td>`).join("")}</tr><tr><th>পয়েন্ট</th>${GRADE_SCALE.map(([, , gp]) => `<td>${bnNum(gp.toFixed(1))}</td>`).join("")}</tr></table>
       <div>${r.remarks ? `<p class="rs-remark"><b>মন্তব্য:</b> ${esc(r.remarks)}</p>` : ""}<div class="rs-sign"><span>শ্রেণি শিক্ষক</span><span>পরীক্ষা নিয়ন্ত্রক</span><span>অধ্যক্ষ</span></div></div>
     </div>
-    <footer class="rs-foot"><span>প্রকাশের তারিখ: ${fmtDate(Date.now())} · এটি কম্পিউটারে তৈরি ফলাফলপত্র</span>${url ? `<span>যাচাই: ${esc(url.replace(/^https?:\/\//, "").split("?")[0])}</span>` : ""}</footer>
-  </div></div></article>`;
+    <footer class="rs-foot"><span>${L("প্রকাশের তারিখ", "Issued on")}: ${fmtDate(Date.now())} · ${L("এটি কম্পিউটারে তৈরি ফলাফলপত্র", "This is a computer-generated result sheet")}</span>${url ? `<span>${L("যাচাই", "Verify")}: ${esc(url.replace(/^https?:\/\//, "").split("?")[0])}</span>` : ""}</footer>
+  </div></div></article>`);
 }
 
 let cssInjected = false;
@@ -130,8 +131,8 @@ export function screenSheet(r, S) {
 /** Open a print-ready A4 document: one page per result, each forced to fit one page. */
 export function printSheets(list, S) {
   const pages = list.map(r => `<section class="page">${sheetHTML(r, S, "print")}</section>`).join("");
-  const title = list.length === 1 ? `ফলাফল — ${list[0].studentName} (রোল ${list[0].roll})` : `ফলাফল — ${list[0].className} ${list[0].exam} ${list[0].year}`;
-  const doc = `<!doctype html><html lang="bn"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)}</title>
+  const title = list.length === 1 ? `${L("ফলাফল", "Result")} — ${list[0].studentName} (${L("রোল", "Roll")} ${bnNum(list[0].roll)})` : `${L("ফলাফল", "Results")} — ${tr(list[0].className)} ${tr(list[0].exam)} ${bnNum(list[0].year)}`;
+  const doc = `<!doctype html><html lang="${isEn() ? "en" : "bn"}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)}</title>
 <link rel="stylesheet" href="${FONTS}">
 <style>
 @page{size:A4 portrait;margin:0}
@@ -150,7 +151,7 @@ ${SHEET_CSS}
   .page:last-child{break-after:auto;page-break-after:auto}
 }
 </style></head><body>
-<div class="bar"><span>${list.length > 1 ? bnNum(list.length) + "টি ফলাফলপত্র · " : ""}A4 সাইজ, প্রতিটি এক পাতায়</span><button onclick="print()">প্রিন্ট / PDF সংরক্ষণ</button><button class="ghost" onclick="close()">বন্ধ করুন</button></div>
+<div class="bar"><span>${L(`${list.length > 1 ? bnNum(list.length) + "টি ফলাফলপত্র · " : ""}A4 সাইজ, প্রতিটি এক পাতায়`, `${list.length > 1 ? list.length + " result sheets · " : ""}A4 size, one page each`)}</span><button onclick="print()">${L("প্রিন্ট / PDF সংরক্ষণ", "Print / Save as PDF")}</button><button class="ghost" onclick="close()">${L("বন্ধ করুন", "Close")}</button></div>
 <main class="pages">${pages}</main>
 <script>
 function fit(){
@@ -171,6 +172,6 @@ addEventListener('beforeprint', fit);
 });
 <\/script></body></html>`;
   const w = window.open("", "_blank");
-  if (!w) { alert("প্রিন্ট পাতা খুলতে পপ-আপ চালু করুন।"); return; }
+  if (!w) { alert(L("প্রিন্ট পাতা খুলতে পপ-আপ চালু করুন।", "Please allow pop-ups to open the print page.")); return; }
   w.document.open(); w.document.write(doc); w.document.close();
 }
