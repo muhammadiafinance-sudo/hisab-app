@@ -1,0 +1,251 @@
+// Data layer: the same API works with Firebase (live, shared) or
+// localStorage (demo mode, only in this browser).
+import { FIREBASE, DEFAULT_SETTINGS, DEMO_DEFAULT_PASSWORD } from "./config.js";
+
+export const MODE = Object.values(FIREBASE).some(v => !v || String(v).includes("YOUR_")) ? "demo" : "firebase";
+const FB_VER = "10.14.1";
+const LS_KEY = "siam_db_v1";
+
+// ---------------------------------------------------------------- Firebase
+let fbPromise = null;
+function fb() {
+  if (!fbPromise) {
+    const base = `https://www.gstatic.com/firebasejs/${FB_VER}/`;
+    fbPromise = Promise.all(["firebase-app", "firebase-auth", "firebase-firestore", "firebase-storage"].map(m => import(base + m + ".js")))
+      .then(([app, auth, fs, st]) => {
+        const a = app.initializeApp(FIREBASE);
+        return { auth, fs, st, A: auth.getAuth(a), D: fs.getFirestore(a), S: st.getStorage(a) };
+      });
+  }
+  return fbPromise;
+}
+
+// ---------------------------------------------------------------- Local (demo)
+function loadLocal() {
+  try { return JSON.parse(localStorage.getItem(LS_KEY)) || null; } catch { return null; }
+}
+function saveLocal(db) {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(db)); }
+  catch (e) { throw new Error("ব্রাউজারের স্টোরেজ পূর্ণ। বড় ছবি মুছে ফেলুন বা Firebase ব্যবহার করুন।"); }
+}
+let local = null;
+function L() {
+  if (!local) { local = loadLocal(); if (!local) { local = seed(); saveLocal(local); } }
+  return local;
+}
+function seed() {
+  const now = Date.now(), day = 86400000;
+  const db = { notices: {}, events: {}, results: {}, settings: {}, teachers: {}, gallery: {}, downloads: {}, routines: {}, admissions: {}, students: {}, messages: {} };
+  const n = (id, title, category, body, ago, pinned = false) =>
+    db.notices[id] = { title, category, body, fileUrl: "", published: true, pinned, createdAt: now - ago * day };
+  n("demo1", "নমুনা নোটিশ: ২০২৭ শিক্ষাবর্ষে ভর্তি চলছে", "ভর্তি", "ষষ্ঠ শ্রেণি থেকে আলিম পর্যন্ত সকল শ্রেণিতে ভর্তি চলছে। অনলাইনে আবেদন করুন অথবা অফিসে যোগাযোগ করুন। (এটি ডেমো তথ্য — অ্যাডমিন প্যানেল থেকে মুছে ফেলুন)", 1, true);
+  n("demo2", "নমুনা নোটিশ: বার্ষিক পরীক্ষার সময়সূচি প্রকাশ", "পরীক্ষা", "বার্ষিক পরীক্ষার সময়সূচি ডাউনলোড পাতায় পাওয়া যাবে। (ডেমো তথ্য)", 4);
+  n("demo3", "নমুনা নোটিশ: শীতকালীন ছুটি", "ছুটি", "শীতকালীন ছুটি উপলক্ষে মাদ্রাসা বন্ধ থাকবে। (ডেমো তথ্য)", 9);
+  db.events.demoE1 = { title: "বার্ষিক পরীক্ষা শুরু (নমুনা)", date: new Date(now + 7 * day).toISOString().slice(0, 10), place: "মাদ্রাসা প্রাঙ্গণ", published: true, createdAt: now };
+  db.events.demoE2 = { title: "বার্ষিক ক্রীড়া প্রতিযোগিতা (নমুনা)", date: new Date(now + 30 * day).toISOString().slice(0, 10), place: "মাদ্রাসা মাঠ", published: true, createdAt: now };
+  const subjects = [["কুরআন মাজিদ ও তাজভিদ", 88], ["আকাইদ ও ফিকহ", 79], ["আরবি ১ম পত্র", 74], ["বাংলা", 81], ["ইংরেজি", 66], ["গণিত", 92], ["বিজ্ঞান", 70]];
+  db.results[resultId(new Date().getFullYear(), "বার্ষিক পরীক্ষা", "ষষ্ঠ শ্রেণি", "1")] = {
+    year: new Date().getFullYear(), exam: "বার্ষিক পরীক্ষা", className: "ষষ্ঠ শ্রেণি", group: "", roll: "1",
+    studentName: "নমুনা শিক্ষার্থী (ডেমো)", fatherName: "", subjects: subjects.map(([subject, marks]) => ({ subject, full: 100, marks })),
+    published: true, createdAt: now
+  };
+  return db;
+}
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+
+// ---------------------------------------------------------------- Public API
+export function resultId(year, exam, className, roll) {
+  return [year, exam, className, String(roll).trim()].join("_").replace(/[\/\s]+/g, "-");
+}
+
+/** list(col, {publicOnly, where:{field:value}}) → array of {id,...} newest first */
+export async function list(col, opt = {}) {
+  let out;
+  if (MODE === "firebase") {
+    const { fs, D } = await fb();
+    const cons = [];
+    if (opt.publicOnly) cons.push(fs.where("published", "==", true));
+    for (const [k, v] of Object.entries(opt.where || {})) cons.push(fs.where(k, "==", v));
+    const snap = await fs.getDocs(cons.length ? fs.query(fs.collection(D, col), ...cons) : fs.collection(D, col));
+    out = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  } else {
+    out = Object.entries(L()[col] || {}).map(([id, d]) => ({ id, ...d }));
+    if (opt.publicOnly) out = out.filter(x => x.published === true);
+    for (const [k, v] of Object.entries(opt.where || {})) out = out.filter(x => x[k] === v);
+  }
+  return out.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+}
+
+export async function get(col, id) {
+  if (MODE === "firebase") {
+    const { fs, D } = await fb();
+    try {
+      const s = await fs.getDoc(fs.doc(D, col, id));
+      return s.exists() ? { id: s.id, ...s.data() } : null;
+    } catch (e) { if (e.code === "permission-denied") return null; throw e; }
+  }
+  const d = (L()[col] || {})[id];
+  return d ? { id, ...d } : null;
+}
+
+export async function set(col, id, data, merge = false) {
+  if (MODE === "firebase") {
+    const { fs, D } = await fb();
+    await fs.setDoc(fs.doc(D, col, id), data, { merge });
+    return id;
+  }
+  const db = L(); db[col] = db[col] || {};
+  db[col][id] = merge ? { ...(db[col][id] || {}), ...data } : data;
+  saveLocal(db); return id;
+}
+
+export async function add(col, data) {
+  data = { createdAt: Date.now(), ...data };
+  if (MODE === "firebase") {
+    const { fs, D } = await fb();
+    return (await fs.addDoc(fs.collection(D, col), data)).id;
+  }
+  return set(col, uid(), data);
+}
+
+export async function update(col, id, data) {
+  if (MODE === "firebase") {
+    const { fs, D } = await fb();
+    await fs.updateDoc(fs.doc(D, col, id), data); return;
+  }
+  const db = L(); if (!db[col]?.[id]) throw new Error("Record not found");
+  db[col][id] = { ...db[col][id], ...data }; saveLocal(db);
+}
+
+export async function remove(col, id) {
+  if (MODE === "firebase") {
+    const { fs, D } = await fb();
+    await fs.deleteDoc(fs.doc(D, col, id)); return;
+  }
+  const db = L(); delete db[col]?.[id]; saveLocal(db);
+}
+
+/** Write many docs at once: items = [{col,id,data}] */
+export async function batchSet(items) {
+  if (MODE === "firebase") {
+    const { fs, D } = await fb();
+    for (let i = 0; i < items.length; i += 400) {
+      const b = fs.writeBatch(D);
+      items.slice(i, i + 400).forEach(it => b.set(fs.doc(D, it.col, it.id), it.data));
+      await b.commit();
+    }
+    return;
+  }
+  const db = L();
+  items.forEach(it => { db[it.col] = db[it.col] || {}; db[it.col][it.id] = it.data; });
+  saveLocal(db);
+}
+
+// ---------------------------------------------------------------- Settings
+let settingsCache = null;
+export async function getSettings(fresh = false) {
+  if (settingsCache && !fresh) return settingsCache;
+  let s = null;
+  try { s = await get("settings", "main"); } catch (e) { console.warn(e); }
+  settingsCache = { ...DEFAULT_SETTINGS, ...(s || {}) };
+  delete settingsCache.id;
+  return settingsCache;
+}
+export async function saveSettings(data) {
+  await set("settings", "main", data, true);
+  settingsCache = null;
+}
+
+// ---------------------------------------------------------------- Files
+/** Resize an image file → JPEG data URL */
+export function imageToDataUrl(file, max = 900, quality = 0.78) {
+  return new Promise((res, rej) => {
+    const img = new Image(), r = new FileReader();
+    r.onload = () => { img.src = r.result; };
+    r.onerror = rej;
+    img.onload = () => {
+      const k = Math.min(1, max / Math.max(img.width, img.height));
+      const c = document.createElement("canvas");
+      c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      res(c.toDataURL("image/jpeg", quality));
+    };
+    img.onerror = () => rej(new Error("ছবিটি পড়া যায়নি"));
+    r.readAsDataURL(file);
+  });
+}
+
+/** Upload a file (admin). Firebase → Storage URL. Demo → data URL (images only). */
+export async function upload(file, folder = "files") {
+  const isImg = file.type.startsWith("image/");
+  if (MODE === "firebase") {
+    const { st, S } = await fb();
+    const r = st.ref(S, `public/${folder}/${Date.now()}_${file.name.replace(/[^\w.\-]+/g, "_")}`);
+    await st.uploadBytes(r, file, { contentType: file.type });
+    return st.getDownloadURL(r);
+  }
+  if (isImg) return imageToDataUrl(file, 1000, 0.75);
+  if (file.size > 1.5 * 1024 * 1024) throw new Error("ডেমো মোডে ১.৫ MB-এর বড় ফাইল রাখা যায় না। ফাইলটি Google Drive-এ রেখে লিংক দিন।");
+  return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(file); });
+}
+
+// ---------------------------------------------------------------- Auth
+const DEMO_SESSION = "siam_admin_session";
+async function sha(t) {
+  const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t));
+  return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, "0")).join("");
+}
+export async function login(email, password) {
+  if (MODE === "firebase") {
+    const { auth, A } = await fb();
+    await auth.signInWithEmailAndPassword(A, email, password);
+    return;
+  }
+  const stored = localStorage.getItem("siam_admin_pw") || await sha(DEMO_DEFAULT_PASSWORD);
+  if (await sha(password) !== stored) throw new Error("পাসওয়ার্ড সঠিক নয়");
+  sessionStorage.setItem(DEMO_SESSION, "1");
+}
+export async function changeDemoPassword(pw) {
+  if (pw.length < 6) throw new Error("পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে");
+  localStorage.setItem("siam_admin_pw", await sha(pw));
+}
+export async function logout() {
+  if (MODE === "firebase") { const { auth, A } = await fb(); await auth.signOut(A); return; }
+  sessionStorage.removeItem(DEMO_SESSION); location.reload();
+}
+/** cb(user|null). user = {email, isAdmin} */
+export async function onAuth(cb) {
+  if (MODE === "firebase") {
+    const { auth, A, fs, D } = await fb();
+    auth.onAuthStateChanged(A, async u => {
+      if (!u) return cb(null);
+      try {
+        const r = await fs.getDoc(fs.doc(D, "users", u.uid));
+        cb({ email: u.email, uid: u.uid, isAdmin: r.exists() && r.data().role === "admin" });
+      } catch { cb({ email: u.email, uid: u.uid, isAdmin: false }); }
+    });
+    return;
+  }
+  cb(sessionStorage.getItem(DEMO_SESSION) ? { email: "demo-admin", uid: "demo", isAdmin: true } : null);
+}
+export async function sendReset(email) {
+  if (MODE !== "firebase") throw new Error("ডেমো মোডে প্রযোজ্য নয়");
+  const { auth, A } = await fb();
+  await auth.sendPasswordResetEmail(A, email);
+}
+
+// ---------------------------------------------------------------- Backup (all modes)
+export const COLLECTIONS = ["notices", "events", "results", "admissions", "students", "teachers", "gallery", "downloads", "routines", "messages", "settings"];
+export async function exportAll() {
+  const out = { exportedAt: new Date().toISOString(), mode: MODE };
+  for (const c of COLLECTIONS) out[c] = await list(c);
+  return out;
+}
+export async function importAll(data) {
+  const items = [];
+  for (const c of COLLECTIONS) for (const d of data[c] || []) { const { id, ...rest } = d; if (id) items.push({ col: c, id, data: rest }); }
+  await batchSet(items);
+  settingsCache = null;
+  return items.length;
+}
+export function resetDemo() { localStorage.removeItem(LS_KEY); local = null; }

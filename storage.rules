@@ -6,12 +6,11 @@ service firebase.storage {
         firestore.exists(/databases/(default)/documents/users/$(request.auth.uid)) &&
         firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == "admin";
     }
+    // Website files (notice PDFs, gallery photos, teacher photos…): public read, admin upload (max 15 MB).
     match /public/{allPaths=**} {
       allow read: if true;
-      allow write: if isAdmin() && request.resource.size < 10 * 1024 * 1024;
+      allow write: if isAdmin() && request.resource.size < 15 * 1024 * 1024;
     }
-    match /private/{allPaths=**} {
-      allow read, write: if isAdmin();
-    }
+    match /{allPaths=**} { allow read, write: if isAdmin(); }
   }
 }

@@ -1,4 +1,6 @@
 rules_version = '2';
+// Firestore security rules — Singchapair Islamia Alim Madrasha
+// Publish from Firebase Console → Firestore Database → Rules (or `firebase deploy --only firestore:rules`).
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() { return request.auth != null; }
@@ -7,23 +9,49 @@ service cloud.firestore {
         exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin";
     }
-    // Public read only for explicitly published content. Only administrators can write.
-    match /notices/{id} { allow read: if resource.data.published == true || isAdmin(); allow write: if isAdmin(); }
-    match /results/{id} { allow read: if resource.data.published == true || isAdmin(); allow write: if isAdmin(); }
-    match /teachers/{id} { allow read: if resource.data.published == true || isAdmin(); allow write: if isAdmin(); }
+    function str(f, max) { return request.resource.data.get(f, "") is string && request.resource.data.get(f, "").size() <= max; }
+
+    // Public content: anyone can read records marked published; only admins write.
+    match /notices/{id}   { allow read: if resource.data.published == true || isAdmin(); allow write: if isAdmin(); }
+    match /events/{id}    { allow read: if resource.data.published == true || isAdmin(); allow write: if isAdmin(); }
+    match /teachers/{id}  { allow read: if resource.data.published == true || isAdmin(); allow write: if isAdmin(); }
+    match /gallery/{id}   { allow read: if resource.data.published == true || isAdmin(); allow write: if isAdmin(); }
     match /downloads/{id} { allow read: if resource.data.published == true || isAdmin(); allow write: if isAdmin(); }
-    match /students/{id} { allow read, write: if isAdmin(); }
+    match /routines/{id}  { allow read: if resource.data.published == true || isAdmin(); allow write: if isAdmin(); }
+
+    // Results: the public can only fetch ONE published result by its exact ID
+    // (year_exam_class_roll). Listing/scraping all results is admin-only.
+    match /results/{id} {
+      allow get: if resource.data.published == true || isAdmin();
+      allow list, write: if isAdmin();
+    }
+
+    // Admissions: anyone may submit a new "Pending" application; the applicant can
+    // check status with the random tracking ID. Listing/editing is admin-only.
     match /admissions/{id} {
-      allow create: if request.resource.data.keys().hasAll(['studentName','fatherName','motherName','level','className','phone','address','status','createdAt'])
-        && request.resource.data.status == "Pending";
-      allow read, update, delete: if isAdmin();
+      allow create: if id.matches('SIAM[0-9]{2}-[A-Z0-9]{7}')
+        && request.resource.data.status == "Pending"
+        && request.resource.data.adminNote == ""
+        && request.resource.data.keys().hasAll(['studentNameBn','studentName','fatherName','motherName','className','guardianPhone','address','createdAt'])
+        && str('studentNameBn', 100) && str('studentName', 100) && str('address', 600) && str('notes', 600)
+        && request.resource.data.get('photo', '').size() < 150000
+        && request.resource.data.size() < 30;
+      allow get: if true;
+      allow list, update, delete: if isAdmin();
     }
+
+    // Contact messages: anyone may create, only admins read.
     match /messages/{id} {
-      allow create: if request.resource.data.keys().hasAll(['name','contact','message','createdAt','status']);
+      allow create: if request.resource.data.keys().hasAll(['name','contact','message','status','createdAt'])
+        && request.resource.data.status == "New"
+        && str('name', 100) && str('contact', 120) && str('message', 2000) && str('subject', 200)
+        && request.resource.data.size() < 10;
       allow read, update, delete: if isAdmin();
     }
+
+    match /students/{id} { allow read, write: if isAdmin(); }
     match /settings/{id} { allow read: if true; allow write: if isAdmin(); }
-    match /users/{uid} { allow read: if signedIn() && request.auth.uid == uid; allow write: if false; }
+    match /users/{uid}   { allow read: if signedIn() && request.auth.uid == uid; allow write: if false; }
     match /{document=**} { allow read, write: if false; }
   }
 }
