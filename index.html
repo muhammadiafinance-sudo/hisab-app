@@ -20,67 +20,109 @@
 <main id="main">
 
 
-<section class="hero">
+<section class="hero" id="hero" aria-roledescription="carousel" aria-label="প্রধান ব্যানার">
+  <div class="hero-bg" id="heroBg" aria-hidden="true"></div>
+  <div class="hero-pattern" aria-hidden="true"></div>
   <div class="container hero-in">
-    <div class="hero-text">
-      <span class="badge-pill" id="admissionBadge">স্বাগতম</span>
-      <p class="bismillah" lang="ar">بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيْمِ</p>
-      <h1>সিংচাপইড় ইসলামিয়া আলিম মাদ্রাসা</h1>
-      <p class="hero-sub">ষষ্ঠ শ্রেণি থেকে আলিম পর্যন্ত কুরআন-সুন্নাহভিত্তিক দ্বীনি শিক্ষা ও আধুনিক সাধারণ শিক্ষার সমন্বিত পাঠদান।</p>
-      <div class="btn-row">
-        <a class="btn btn-primary btn-lg" href="admission.html" id="heroAdmission">অনলাইনে ভর্তি আবেদন</a>
-        <a class="btn btn-ghost btn-lg" href="results.html">ফলাফল দেখুন</a>
-      </div>
+    <div class="hero-slides" id="heroSlides">
+      <article class="hero-slide active" data-slide="0">
+        <span class="hero-badge" id="admissionBadge">স্বাগতম</span>
+        <p class="bismillah" lang="ar">بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيْمِ</p>
+        <h1>সিংচাপইড় ইসলামিয়া <span>আলিম মাদ্রাসা</span></h1>
+        <p class="hero-sub">ষষ্ঠ শ্রেণি থেকে আলিম পর্যন্ত কুরআন-সুন্নাহভিত্তিক দ্বীনি শিক্ষা ও আধুনিক সাধারণ শিক্ষার সমন্বিত পাঠদান।</p>
+        <div class="btn-row"><a class="btn btn-gold btn-lg" href="admission.html" id="heroAdmission">অনলাইনে ভর্তি আবেদন</a><a class="btn btn-outline btn-lg" href="about.html">আমাদের সম্পর্কে</a></div>
+      </article>
+      <article class="hero-slide" data-slide="1">
+        <span class="hero-badge">ভর্তি</span>
+        <h2 class="hero-title"><span id="admSlideTitle">ভর্তি চলছে</span></h2>
+        <p class="hero-sub">ষষ্ঠ শ্রেণি থেকে আলিম পর্যন্ত সকল শ্রেণিতে ঘরে বসেই অনলাইনে আবেদন করুন। আবেদনের পর ট্র্যাকিং আইডি দিয়ে অবস্থা জানুন।</p>
+        <div class="countdown" id="countdown" hidden aria-live="off"></div>
+        <div class="btn-row"><a class="btn btn-gold btn-lg" href="admission.html">আবেদন করুন</a><a class="btn btn-outline btn-lg" href="admission.html#trackForm">আবেদনের অবস্থা</a></div>
+      </article>
+      <article class="hero-slide" data-slide="2">
+        <span class="hero-badge">ফলাফল</span>
+        <h2 class="hero-title">পরীক্ষার ফলাফল <span>এখন অনলাইনে</span></h2>
+        <p class="hero-sub">শ্রেণি, পরীক্ষা ও রোল নম্বর দিয়ে বিষয়ভিত্তিক নম্বর, গ্রেড, জিপিএ ও মেধাস্থানসহ মার্কশিট দেখুন এবং প্রিন্ট করুন।</p>
+        <div class="btn-row"><a class="btn btn-gold btn-lg" href="results.html">ফলাফল দেখুন</a><a class="btn btn-outline btn-lg" href="notices.html">নোটিশ বোর্ড</a></div>
+      </article>
     </div>
-    <nav class="quick" aria-label="দ্রুত সেবা">
-      <p class="quick-title">দ্রুত সেবা</p>
-      <a href="admission.html"><i data-icon="file"></i><span><b>ভর্তি</b><small>অনলাইন আবেদন ও অবস্থা</small></span><i data-icon="arrowRight" class="go"></i></a>
-      <a href="results.html"><i data-icon="chart"></i><span><b>ফলাফল</b><small>রোল দিয়ে মার্কশিট</small></span><i data-icon="arrowRight" class="go"></i></a>
-      <a href="notices.html"><i data-icon="bell"></i><span><b>নোটিশ</b><small>সর্বশেষ বিজ্ঞপ্তি</small></span><i data-icon="arrowRight" class="go"></i></a>
-      <a href="academics.html#routine"><i data-icon="clock"></i><span><b>রুটিন</b><small>ক্লাস ও পরীক্ষা</small></span><i data-icon="arrowRight" class="go"></i></a>
-      <a href="downloads.html"><i data-icon="download"></i><span><b>ডাউনলোড</b><small>ফরম ও সিলেবাস</small></span><i data-icon="arrowRight" class="go"></i></a>
-    </nav>
+
+    <form class="result-widget" id="quickResult" aria-labelledby="qrTitle">
+      <div class="rw-head"><span class="rw-ic"><i data-icon="chart"></i></span><div><h2 id="qrTitle">ফলাফল দেখুন</h2><p>রোল নম্বর দিয়ে মার্কশিট</p></div></div>
+      <label>শ্রেণি<select name="className" required></select></label>
+      <div class="rw-row">
+        <label>পরীক্ষা<select name="exam" required></select></label>
+        <label>সাল<select name="year" required></select></label>
+      </div>
+      <label>রোল নম্বর<input name="roll" required inputmode="numeric" maxlength="10" placeholder="যেমন: 12"></label>
+      <button class="btn btn-primary btn-lg btn-block" type="submit"><i data-icon="search"></i>ফলাফল খুঁজুন</button>
+    </form>
   </div>
-  <div class="container"><div class="stats" id="stats"></div></div>
+  <div class="container hero-controls">
+    <div class="dots" id="heroDots" role="tablist" aria-label="স্লাইড নির্বাচন"></div>
+    <div class="arrows"><button type="button" id="heroPrev" aria-label="আগের স্লাইড"><i data-icon="arrowLeft"></i></button><button type="button" id="heroNext" aria-label="পরের স্লাইড"><i data-icon="arrowRight"></i></button></div>
+  </div>
 </section>
 
-<section class="section">
+<section class="quick-wrap">
+  <div class="container quick-grid reveal">
+    <a href="admission.html"><span class="q-ic"><i data-icon="file"></i></span><b>ভর্তি</b><small>অনলাইন আবেদন</small></a>
+    <a href="results.html"><span class="q-ic"><i data-icon="chart"></i></span><b>ফলাফল</b><small>মার্কশিট দেখুন</small></a>
+    <a href="notices.html"><span class="q-ic"><i data-icon="bell"></i></span><b>নোটিশ</b><small>সর্বশেষ বিজ্ঞপ্তি</small></a>
+    <a href="academics.html#routine"><span class="q-ic"><i data-icon="clock"></i></span><b>রুটিন</b><small>ক্লাস ও পরীক্ষা</small></a>
+    <a href="teachers.html"><span class="q-ic"><i data-icon="users"></i></span><b>শিক্ষকমণ্ডলী</b><small>শিক্ষক ও কমিটি</small></a>
+    <a href="downloads.html"><span class="q-ic"><i data-icon="download"></i></span><b>ডাউনলোড</b><small>ফরম ও সিলেবাস</small></a>
+  </div>
+</section>
+
+<section class="section stats-section" id="statsSection">
+  <div class="container stats reveal" id="stats"></div>
+</section>
+
+<section class="section alt">
   <div class="container grid-2-1">
-    <div>
-      <div class="sec-head"><h2 data-en="Notice Board">নোটিশ বোর্ড</h2><a class="link" href="notices.html">সকল নোটিশ<i data-icon="arrowRight" class="sm"></i></a></div>
+    <div class="reveal">
+      <div class="sec-head"><div><p class="eyebrow">নোটিশ বোর্ড</p><h2 data-en="Latest Notices">সর্বশেষ নোটিশ</h2></div><a class="link" href="notices.html">সকল নোটিশ<i data-icon="arrowRight" class="sm"></i></a></div>
+      <div class="tabs" id="noticeTabs" role="tablist" aria-label="নোটিশের ধরন"></div>
       <div class="list" id="homeNotices"><div class="loading">লোড হচ্ছে…</div></div>
     </div>
-    <aside>
-      <div class="sec-head"><h2 data-en="Upcoming Events">আসন্ন অনুষ্ঠান</h2></div>
+    <aside class="reveal">
+      <div class="sec-head"><div><p class="eyebrow">ক্যালেন্ডার</p><h2 data-en="Upcoming Events">আসন্ন অনুষ্ঠান</h2></div></div>
       <div class="list" id="homeEvents"><div class="loading">লোড হচ্ছে…</div></div>
-      <a class="callout" href="results.html"><i data-icon="chart"></i><span><b>পরীক্ষার ফলাফল</b><small>রোল নম্বর দিয়ে ফলাফল ও মার্কশিট দেখুন</small></span><i data-icon="arrowRight" class="go"></i></a>
+      <div class="adm-card" id="admCard" hidden>
+        <p class="eyebrow">ভর্তি</p><h3 id="admCardTitle"></h3>
+        <div class="countdown sm" id="countdown2"></div>
+        <a class="btn btn-gold btn-block" href="admission.html">এখনই আবেদন করুন</a>
+      </div>
     </aside>
   </div>
 </section>
 
-<section class="section alt">
-  <div class="container principal">
-    <div id="principalPhoto"></div>
+<section class="section">
+  <div class="container principal reveal">
+    <div class="principal-photo" id="principalPhoto"></div>
     <div>
       <p class="eyebrow">বাণী</p>
       <h2 data-en="Message from the Principal">অধ্যক্ষের বাণী</h2>
-      <blockquote id="principalMsg"></blockquote>
+      <blockquote><span class="quote-mark" aria-hidden="true">“</span><span id="principalMsg"></span></blockquote>
       <p class="sig"><b id="principalName"></b> <span id="principalTitle"></span></p>
       <a class="link" href="about.html">আমাদের সম্পর্কে আরও জানুন<i data-icon="arrowRight" class="sm"></i></a>
     </div>
   </div>
 </section>
 
-<section class="section">
+<section class="section alt">
   <div class="container">
-    <div class="sec-head"><div><p class="eyebrow">একাডেমিক</p><h2 data-en="Classes We Offer">আমাদের শ্রেণিসমূহ</h2><p class="muted lead-sm" id="aboutShort"></p></div><a class="link" href="academics.html">বিস্তারিত<i data-icon="arrowRight" class="sm"></i></a></div>
-    <div class="class-strip" id="classStrip"></div>
+    <div class="sec-head center reveal"><div><p class="eyebrow">একাডেমিক</p><h2 data-en="Classes We Offer">ষষ্ঠ শ্রেণি থেকে আলিম</h2><p class="muted lead-sm" id="aboutShort"></p></div></div>
+    <div class="level-tabs reveal" id="levelTabs" role="tablist"></div>
+    <div class="class-strip reveal" id="classStrip"></div>
   </div>
 </section>
 
-<section class="section alt">
+<section class="section">
   <div class="container">
-    <div class="feature-grid">
+    <div class="sec-head center reveal"><div><p class="eyebrow">কেন আমাদের মাদ্রাসা</p><h2>আমাদের বৈশিষ্ট্য</h2></div></div>
+    <div class="feature-grid reveal">
       <div class="feature"><i data-icon="book"></i><h3>দ্বীনি শিক্ষা</h3><p>কুরআন, হাদিস, ফিকহ ও আরবি ভাষায় দক্ষ শিক্ষকমণ্ডলীর তত্ত্বাবধানে পাঠদান।</p></div>
       <div class="feature"><i data-icon="flask"></i><h3>আধুনিক শিক্ষা</h3><p>বাংলা, ইংরেজি, গণিত, বিজ্ঞান ও তথ্যপ্রযুক্তিসহ জাতীয় পাঠ্যক্রম অনুসরণ।</p></div>
       <div class="feature"><i data-icon="shield"></i><h3>নৈতিকতা ও আদব</h3><p>চরিত্র গঠন, শৃঙ্খলা ও সামাজিক দায়িত্ববোধ জাগ্রত করার শিক্ষা।</p></div>
@@ -89,18 +131,19 @@
   </div>
 </section>
 
-<section class="section">
+<section class="section alt">
   <div class="container">
-    <div class="sec-head"><h2 data-en="Photo Gallery">ফটো গ্যালারি</h2><a class="link" href="gallery.html">সব ছবি<i data-icon="arrowRight" class="sm"></i></a></div>
-    <div class="gallery-grid" id="homeGallery"><div class="loading">লোড হচ্ছে…</div></div>
+    <div class="sec-head reveal"><div><p class="eyebrow">স্মৃতি</p><h2 data-en="Photo Gallery">ফটো গ্যালারি</h2></div><a class="link" href="gallery.html">সব ছবি<i data-icon="arrowRight" class="sm"></i></a></div>
+    <div class="gallery-grid reveal" id="homeGallery"><div class="loading">লোড হচ্ছে…</div></div>
   </div>
 </section>
 
-<section class="section pt0">
-  <div class="container"><div class="cta">
-    <div><h2>ভর্তি সংক্রান্ত তথ্য জানতে চান?</h2><p class="muted">অনলাইনে আবেদন করুন অথবা মাদ্রাসা অফিসে যোগাযোগ করুন।</p></div>
-    <div class="btn-row"><a class="btn btn-primary" href="admission.html">ভর্তি আবেদন</a><a class="btn btn-ghost" href="contact.html">যোগাযোগ</a></div>
-  </div></div>
+<section class="cta-band">
+  <div class="hero-pattern" aria-hidden="true"></div>
+  <div class="container cta-in reveal">
+    <div><h2>আপনার সন্তানের উজ্জ্বল ভবিষ্যতের জন্য</h2><p>ভর্তি সংক্রান্ত যেকোনো তথ্যের জন্য অনলাইনে আবেদন করুন অথবা মাদ্রাসা অফিসে যোগাযোগ করুন।</p></div>
+    <div class="btn-row"><a class="btn btn-gold btn-lg" href="admission.html">ভর্তি আবেদন</a><a class="btn btn-outline btn-lg" href="contact.html">যোগাযোগ করুন</a></div>
+  </div>
 </section>
 
 </main>
