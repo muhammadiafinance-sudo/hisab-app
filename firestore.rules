@@ -50,6 +50,8 @@ service cloud.firestore {
     }
 
     match /students/{id} { allow read, write: if isAdmin(); }
+    // Confidential teacher/staff service records (NID, TIN, documents): admins only.
+    match /staffRecords/{id} { allow read, write: if isAdmin(); }
     match /settings/{id} { allow read: if true; allow write: if isAdmin(); }
     match /users/{uid}   { allow read: if signedIn() && request.auth.uid == uid; allow write: if false; }
     match /{document=**} { allow read, write: if false; }

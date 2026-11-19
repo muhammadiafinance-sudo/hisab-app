@@ -146,3 +146,23 @@ code { padding: 1px 6px; font-family: var(--mono); font-size: .85em; background:
 .settings .panel .form-grid { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
 .sticky-save { position: sticky; bottom: 0; z-index: 5; padding: 14px 0; text-align: right; background: linear-gradient(transparent, var(--subtle) 35%); }
 .err { color: var(--err); }
+
+/* ---------------------------------------------------------------- Staff information sheet */
+.staff-form .panel { box-shadow: none; }
+.staff-form .panel h3 { color: var(--brand-dark); }
+.edu-table th, .edu-table td { padding: 6px 8px; }
+.edu-table tbody th { width: 30%; font-weight: 600; color: var(--text-2); background: var(--subtle); }
+.edu-table input { min-height: 38px; }
+.doc-list { display: grid; gap: 8px; }
+.doc-row { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.6fr) auto; gap: 12px; align-items: center; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r); background: var(--bg); }
+.doc-label { font-weight: 600; font-size: .9rem; }
+.doc-files { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
+.doc-chip { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; padding: 2px 4px 2px 8px; border: 1px solid var(--brand-line); background: var(--brand-tint); border-radius: 999px; font-size: .85rem; }
+.doc-chip .linkish { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.doc-chip img { width: 28px; height: 34px; object-fit: cover; border-radius: 4px; }
+.doc-chip .icon-btn { width: 24px; height: 24px; margin: 0; }
+.sticky-actions { position: sticky; bottom: -28px; margin: 0 -28px -28px; padding: 14px 28px; background: var(--bg); border-top: 1px solid var(--line); border-radius: 0 0 var(--r-lg) var(--r-lg); }
+.badge-btn { cursor: pointer; font: inherit; font-size: .8125rem; }
+@media (max-width: 700px) { .doc-row { grid-template-columns: 1fr; } .sticky-actions { flex-wrap: wrap; } }
+.private-note { display: flex; gap: 12px; align-items: flex-start; margin: 4px 0 16px; padding: 12px 14px; border: 1px solid var(--brand-line); background: var(--brand-tint); border-radius: var(--r); font-size: .9rem; color: var(--text-2); }
+.private-note .ic { color: var(--brand); margin-top: .2em; }
