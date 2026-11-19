@@ -13,26 +13,52 @@ const STATUS = { Pending: ["অপেক্ষমাণ", "warn"], Approved: ["�
 const statusBadge = s => { const x = STATUS[s] || [s, "warn"]; return `<span class="badge ${x[1]}">${x[0]}</span>`; };
 
 // ===================================================================== Auth
+const MODE_LABEL = { api: "লাইভ (নিজস্ব সার্ভার)", firebase: "লাইভ (Firebase)", demo: "ডেমো মোড" };
 (async function boot() {
-  $("#modeNote").innerHTML = store.MODE === "demo"
-    ? `<b>ডেমো মোড:</b> Firebase এখনো সংযুক্ত হয়নি। ডিফল্ট পাসওয়ার্ড <code>${DEMO_DEFAULT_PASSWORD}</code> — লগইনের পর সেটিংস থেকে পরিবর্তন করুন। এই মোডে তথ্য শুধু এই ব্রাউজারে থাকবে।`
-    : `Firebase Authentication-এ তৈরি করা অ্যাডমিন ইমেইল ও পাসওয়ার্ড দিয়ে লগইন করুন।`;
-  if (store.MODE === "demo") $("#emailWrap").hidden = true; else { $("#resetBtn").hidden = false; $("#loginForm").email.required = true; }
-  $("#loginForm").addEventListener("submit", async e => {
-    e.preventDefault(); const f = e.currentTarget, b = f.querySelector("[type=submit]");
+  await store.ready;
+  const lf = $("#loginForm"), userInput = lf.elements.user;
+  $("#modeNote").innerHTML = {
+    demo: `<b>ডেমো মোড:</b> সার্ভার সংযুক্ত নয়, তাই তথ্য শুধু এই ব্রাউজারে থাকবে। পাসওয়ার্ড <code>${DEMO_DEFAULT_PASSWORD}</code> — লগইনের পর সেটিংস থেকে পরিবর্তন করুন।`,
+    api: `নিজস্ব সার্ভারে সংযুক্ত। আপনার অ্যাডমিন ইউজারনেম ও পাসওয়ার্ড দিন।`,
+    firebase: `Firebase Authentication-এ তৈরি করা অ্যাডমিন ইমেইল ও পাসওয়ার্ড দিয়ে লগইন করুন।`
+  }[store.MODE];
+  if (store.MODE === "demo") $("#userWrap").hidden = true;
+  else {
+    userInput.required = true;
+    if (store.MODE === "firebase") { $("#userLabel").textContent = "ইমেইল"; userInput.type = "email"; $("#resetBtn").hidden = false; }
+  }
+  lf.addEventListener("submit", async e => {
+    e.preventDefault(); const b = lf.querySelector("[type=submit]");
     b.disabled = true; $("#loginMsg").textContent = "";
-    try { await store.login(f.email.value.trim(), f.password.value); if (store.MODE === "demo") location.reload(); }
+    try { await store.login(userInput.value.trim(), lf.password.value); if (store.MODE !== "firebase") location.reload(); }
     catch (err) { $("#loginMsg").textContent = "লগইন ব্যর্থ: " + (err.code === "auth/invalid-credential" ? "ইমেইল বা পাসওয়ার্ড ভুল" : err.message); }
     b.disabled = false;
   });
   $("#resetBtn").addEventListener("click", async () => {
-    const email = $("#loginForm").email.value.trim(); if (!email) { $("#loginMsg").textContent = "প্রথমে ইমেইল লিখুন"; return; }
+    const email = userInput.value.trim(); if (!email) { $("#loginMsg").textContent = "প্রথমে ইমেইল লিখুন"; return; }
     try { await store.sendReset(email); $("#loginMsg").textContent = "পাসওয়ার্ড রিসেট লিংক ইমেইলে পাঠানো হয়েছে।"; } catch (err) { $("#loginMsg").textContent = err.message; }
+  });
+  $("#setupForm").addEventListener("submit", async e => {
+    e.preventDefault(); const f = e.currentTarget, b = f.querySelector("[type=submit]");
+    if (f.password.value !== f.password2.value) { $("#setupMsg").textContent = "দুটি পাসওয়ার্ড মেলেনি"; return; }
+    b.disabled = true; $("#setupMsg").textContent = "";
+    try { await store.setupAdmin(f.username.value.trim(), f.password.value, f.name.value.trim()); location.reload(); }
+    catch (err) { $("#setupMsg").textContent = err.message; b.disabled = false; }
   });
   $("#logoutBtn").addEventListener("click", () => store.logout());
   $("#sideToggle").addEventListener("click", () => $("#sidebar").classList.toggle("open"));
 
-  await store.onAuth(async user => {
+  try {
+    await store.onAuth(onUser);
+  } catch (err) {
+    console.error(err);
+    $("#loginView").hidden = false;
+    $("#loginMsg").textContent = "সার্ভারের সাথে সংযোগ করা যায়নি: " + err.message;
+  }
+})();
+
+async function onUser(user, info = {}) {
+    if (!user && info.needsSetup) { $("#setupView").hidden = false; $("#loginView").hidden = true; $("#appView").hidden = true; return; }
     if (!user) { $("#loginView").hidden = false; $("#appView").hidden = true; return; }
     if (!user.isAdmin) {
       $("#loginView").hidden = false; $("#appView").hidden = true;
@@ -40,13 +66,12 @@ const statusBadge = s => { const x = STATUS[s] || [s, "warn"]; return `<span cla
       await store.logout(); return;
     }
     USER = user; S = await store.getSettings(true);
-    $("#loginView").hidden = true; $("#appView").hidden = false;
-    $("#userEmail").textContent = user.email;
-    $("#modePill").textContent = store.MODE === "demo" ? "ডেমো মোড" : "লাইভ (Firebase)";
-    $("#modePill").className = "mode-pill " + store.MODE;
+    $("#loginView").hidden = true; $("#setupView").hidden = true; $("#appView").hidden = false;
+    $("#userEmail").textContent = user.name || user.email;
+    $("#modePill").textContent = MODE_LABEL[store.MODE];
+    $("#modePill").className = "mode-pill " + (store.MODE === "demo" ? "demo" : "firebase");
     buildNav(); route();
-  });
-})();
+}
 
 // ===================================================================== Navigation
 const SECTIONS = [
@@ -105,7 +130,7 @@ function fieldHtml(f, rec) {
     case "file": {
       const u = safeUrl(val), isImg = f.accept === "image/*";
       return `<div class="file-field ${cls}"><span class="flabel">${lab}</span><input type="hidden" name="${f.name}" value="${esc(val)}">
-        <div class="file-row"><input type="url" data-urlfor="${f.name}" placeholder="লিংক (https://…) দিন অথবা ফাইল বাছাই করুন" value="${u && !u.startsWith("data:") ? esc(u) : ""}"><label class="btn btn-sm btn-ghost upl">📤 আপলোড<input type="file" data-upload="${f.name}" accept="${f.accept || "*/*"}" hidden></label></div>
+        <div class="file-row"><input type="text" inputmode="url" autocapitalize="none" spellcheck="false" data-urlfor="${f.name}" placeholder="লিংক (https://…) দিন অথবা ফাইল বাছাই করুন" value="${u && !u.startsWith("data:") ? esc(u) : ""}"><label class="btn btn-sm btn-ghost upl">📤 আপলোড<input type="file" data-upload="${f.name}" accept="${f.accept || "*/*"}" hidden></label></div>
         <div class="file-prev" data-prev="${f.name}">${u ? (isImg ? `<img src="${esc(u)}" alt="">` : `<span>✓ ফাইল সংযুক্ত</span>`) + ` <button type="button" class="linkish" data-clear="${f.name}">সরান</button>` : ""}</div>${help}</div>`;
     }
     default: return `<label class="${cls}">${lab}<input type="${f.type || "text"}" name="${f.name}" value="${esc(val)}" ${req} ${f.attrs || ""}>${help}</label>`;
@@ -371,7 +396,7 @@ const VIEWS = {
     const data = Object.fromEntries(await Promise.all(cols.map(async c => [c, await store.list(c)])));
     const pending = data.admissions.filter(a => a.status === "Pending"), newMsg = data.messages.filter(m => m.status === "New");
     view().innerHTML = `
-      ${store.MODE === "demo" ? `<div class="alert warn"><b>⚠️ ডেমো মোড চলছে।</b> এখন যা যোগ করবেন তা শুধু এই ব্রাউজারে দেখা যাবে, অন্য দর্শক দেখতে পাবে না। সবার জন্য লাইভ করতে <code>assets/js/config.js</code> ফাইলে Firebase কনফিগারেশন বসান (README.md-তে ধাপে ধাপে নির্দেশনা আছে)। ডেমোর নমুনা তথ্যগুলো মুছে ফেলতে পারেন।</div>` : ""}
+      ${store.MODE === "demo" ? `<div class="alert warn"><b>⚠️ ডেমো মোড চলছে।</b> এখন যা যোগ করবেন তা শুধু এই ব্রাউজারে দেখা যাবে, অন্য দর্শক দেখতে পাবে না। সবার জন্য লাইভ করতে পুরো ওয়েবসাইটটি PHP সাপোর্টেড হোস্টিং-এ (যেমন cPanel) আপলোড করুন — নিজস্ব সার্ভার স্বয়ংক্রিয়ভাবে চালু হবে (README.md দেখুন)। ডেমোর নমুনা তথ্যগুলো মুছে ফেলতে পারেন।</div>` : ""}
       <div class="stat-cards">
         ${[["👨‍🎓", "শিক্ষার্থী", data.students.length, "students"], ["🎓", "অপেক্ষমাণ আবেদন", pending.length, "admissions"], ["📢", "নোটিশ", data.notices.length, "notices"], ["📝", "ফলাফল রেকর্ড", data.results.length, "results"], ["👥", "শিক্ষক-কর্মচারী", data.teachers.length, "teachers"], ["✉️", "নতুন বার্তা", newMsg.length, "messages"]]
         .map(([i, l, n, k]) => `<a class="stat-card" href="#${k}"><span>${i}</span><div><b>${bnNum(n)}</b><small>${l}</small></div></a>`).join("")}
@@ -547,8 +572,18 @@ const VIEWS = {
         <div class="form-grid">${CLASS_NAMES.map(c => `<label>${c}<textarea data-subj="${esc(c)}" rows="7">${esc(subjectsFor(S, c).join("\n"))}</textarea></label>`).join("")}</div>
         <button type="button" class="btn btn-sm btn-ghost" id="subjReset">ডিফল্ট বিষয় তালিকা ফিরিয়ে আনুন</button></section>
       <div class="sticky-save"><button class="btn btn-primary btn-lg" type="submit">💾 সেটিংস সংরক্ষণ করুন</button></div></form>
-      ${store.MODE === "demo" ? `<section class="panel"><h3>অ্যাডমিন পাসওয়ার্ড পরিবর্তন (ডেমো মোড)</h3><form id="pwForm" class="inline-form"><input type="password" name="pw" placeholder="নতুন পাসওয়ার্ড (কমপক্ষে ৬ অক্ষর)" minlength="6" required><button class="btn btn-primary">পরিবর্তন</button></form></section>`
-        : `<section class="panel"><h3>অ্যাডমিন অ্যাকাউন্ট</h3><p>পাসওয়ার্ড পরিবর্তন বা নতুন অ্যাডমিন যোগ করতে Firebase Console → Authentication ব্যবহার করুন। নতুন অ্যাডমিনের UID দিয়ে Firestore-এ <code>users/{UID}</code> ডকুমেন্টে <code>role: "admin"</code> যোগ করুন।</p></section>`}`;
+      ${store.MODE === "firebase"
+        ? `<section class="panel"><h3>অ্যাডমিন অ্যাকাউন্ট</h3><p>পাসওয়ার্ড পরিবর্তন বা নতুন অ্যাডমিন যোগ করতে Firebase Console → Authentication ব্যবহার করুন। নতুন অ্যাডমিনের UID দিয়ে Firestore-এ <code>users/{UID}</code> ডকুমেন্টে <code>role: "admin"</code> যোগ করুন।</p></section>`
+        : `<section class="panel"><h3>🔑 আমার পাসওয়ার্ড পরিবর্তন</h3><form id="pwForm" class="form-grid">
+            <label>বর্তমান পাসওয়ার্ড<input type="password" name="current" required autocomplete="current-password"></label>
+            <label>নতুন পাসওয়ার্ড<input type="password" name="pw" required minlength="${store.MODE === "api" ? 8 : 6}" autocomplete="new-password"></label>
+            <div class="full form-actions"><button class="btn btn-primary">পাসওয়ার্ড পরিবর্তন</button></div></form></section>`}
+      ${store.MODE === "api" ? `<section class="panel"><h3>👥 অ্যাডমিন ব্যবহারকারী</h3><p class="muted small">যাঁরা অ্যাডমিন পোর্টালে লগইন করতে পারবেন। প্রত্যেকের আলাদা অ্যাকাউন্ট দিন।</p><div class="table-wrap" id="userTbl"><div class="loading">লোড হচ্ছে…</div></div>
+          <h4 style="margin-top:18px">নতুন অ্যাডমিন যোগ করুন</h4><form id="userForm" class="form-grid">
+            <label>নাম<input name="name" maxlength="120"></label>
+            <label>ইউজারনেম *<input name="username" required pattern="[A-Za-z0-9._@\\-]{3,60}" title="ইংরেজি অক্ষর, সংখ্যা, . _ - @ (৩–৬০ অক্ষর)" autocapitalize="none"></label>
+            <label>পাসওয়ার্ড * <small class="help">কমপক্ষে ৮ অক্ষর</small><input name="password" type="password" required minlength="8" autocomplete="new-password"></label>
+            <div class="form-actions" style="align-self:end"><button class="btn btn-primary">+ যোগ করুন</button></div></form></section>` : ""}`;
     const form = $("#setForm");
     bindFileFields(form, "settings");
     $("#subjReset").onclick = () => $$("[data-subj]").forEach(t => t.value = DEFAULT_SUBJECTS[t.dataset.subj].join("\n"));
@@ -558,7 +593,26 @@ const VIEWS = {
       d.subjects = Object.fromEntries($$("[data-subj]").map(t => [t.dataset.subj, t.value.split("\n").map(s => s.trim()).filter(Boolean)]));
       try { await store.saveSettings(d); S = await store.getSettings(true); toast("সেটিংস সংরক্ষিত হয়েছে ✓"); } catch (err) { toast(err.message, "err"); }
     });
-    $("#pwForm")?.addEventListener("submit", async e => { e.preventDefault(); try { await store.changeDemoPassword(e.target.pw.value); e.target.reset(); toast("পাসওয়ার্ড পরিবর্তন হয়েছে"); } catch (err) { toast(err.message, "err"); } });
+    $("#pwForm")?.addEventListener("submit", async e => { e.preventDefault(); const f = e.target; try { await store.changePassword(f.current.value, f.pw.value); f.reset(); toast("পাসওয়ার্ড পরিবর্তন হয়েছে ✓"); } catch (err) { toast(err.message, "err"); } });
+    if (store.MODE === "api") {
+      const drawUsers = async () => {
+        const list = await store.users.list();
+        $("#userTbl").innerHTML = `<table class="table"><thead><tr><th>নাম</th><th>ইউজারনেম</th><th>যোগ করা হয়েছে</th><th class="act"></th></tr></thead><tbody>${list.map(u => `<tr><td>${esc(u.name || "—")}</td><td><code>${esc(u.username)}</code>${u.username === USER.email ? ` <span class="badge ok">আপনি</span>` : ""}</td><td>${fmtDate(Number(u.created_at))}</td><td class="act">${u.username === USER.email ? "" : `<button class="btn btn-sm btn-ghost" data-reset="${u.id}">পাসওয়ার্ড রিসেট</button> <button class="icon-btn" data-udel="${u.id}" title="মুছুন">🗑️</button>`}</td></tr>`).join("")}</tbody></table>`;
+      };
+      await drawUsers();
+      $("#userTbl").addEventListener("click", async e => {
+        const b = e.target.closest("button"); if (!b) return;
+        try {
+          if (b.dataset.udel && confirmDel("এই অ্যাডমিন অ্যাকাউন্ট")) { await store.users.remove(Number(b.dataset.udel)); toast("মুছে ফেলা হয়েছে"); }
+          if (b.dataset.reset) { const pw = prompt("নতুন পাসওয়ার্ড দিন (কমপক্ষে ৮ অক্ষর):"); if (!pw) return; await store.users.resetPassword(Number(b.dataset.reset), pw); toast("পাসওয়ার্ড রিসেট হয়েছে"); }
+          await drawUsers();
+        } catch (err) { toast(err.message, "err"); }
+      });
+      $("#userForm").addEventListener("submit", async e => {
+        e.preventDefault(); const f = e.target;
+        try { await store.users.add(f.username.value.trim(), f.password.value, f.name.value.trim()); f.reset(); toast("অ্যাডমিন যোগ হয়েছে ✓"); await drawUsers(); } catch (err) { toast(err.message, "err"); }
+      });
+    }
   },
 
   // ----------------------------------------------------------------- Backup

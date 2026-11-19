@@ -2,7 +2,7 @@
 export const $ = (s, r = document) => r.querySelector(s);
 export const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 export const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-export const safeUrl = u => { u = String(u || "").trim(); return /^(https?:|data:image\/|data:application\/|\.?\/|[\w-]+\.)/i.test(u) && !/^javascript:/i.test(u) ? u : ""; };
+export const safeUrl = u => { u = String(u || "").trim(); return /^(https?:|data:image\/|data:application\/|\.{0,2}\/|[\w-]+[.\/])/i.test(u) && !/^javascript:/i.test(u) ? u : ""; };
 const BN = "০১২৩৪৫৬৭৮৯";
 export const bnNum = n => String(n ?? "").replace(/\d/g, d => BN[d]);
 export const fmtDate = (t, opt = { day: "numeric", month: "long", year: "numeric" }) => {
