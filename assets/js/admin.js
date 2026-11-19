@@ -217,9 +217,10 @@ const RES = {
       { name: "imageUrl", label: "ছবি", type: "file", accept: "image/*", required: true, full: true },
       { name: "title", label: "ক্যাপশন" },
       { name: "album", label: "অ্যালবাম", attrs: 'list="albums" placeholder="যেমন: বার্ষিক ক্রীড়া ২০২৬"' },
+      { name: "slider", label: "প্রথম পাতার বড় স্লাইডারে দেখান (চওড়া ছবি দিন, যেমন মাদ্রাসা ভবন)", type: "checkbox", full: true },
       { name: "published", label: "প্রকাশ করুন", type: "checkbox", default: true }
     ],
-    cols: [["ছবি", x => safeUrl(x.imageUrl) ? `<img class="thumb" src="${esc(safeUrl(x.imageUrl))}" alt="">` : ""], ["ক্যাপশন", x => esc(x.title)], ["অ্যালবাম", x => esc(x.album)], ["অবস্থা", x => yesNo(x.published)]],
+    cols: [["ছবি", x => safeUrl(x.imageUrl) ? `<img class="thumb" src="${esc(safeUrl(x.imageUrl))}" alt="">` : ""], ["ক্যাপশন", x => esc(x.title)], ["অ্যালবাম", x => esc(x.album)], ["স্লাইডার", x => x.slider ? `<span class="badge ok">হ্যাঁ</span>` : ""], ["অবস্থা", x => yesNo(x.published)]],
     search: x => (x.title || "") + " " + (x.album || "")
   },
   downloads: {

@@ -106,25 +106,79 @@ function showNotice(x) {
 // ---------------------------------------------------------------- Pages
 const pages = {
   async home() {
+    // ---- static texts from settings
     $("#principalMsg").textContent = S.principalMessage;
-    $("#principalName").textContent = S.principalName ? S.principalName : "";
+    $("#principalName").textContent = S.principalName || "";
     $("#principalTitle").textContent = S.principalTitle || "অধ্যক্ষ";
     $("#principalPhoto").innerHTML = avatar(S.principalPhoto, S.principalName || "অধ্যক্ষ", "principal-img");
     $("#aboutShort").textContent = S.about;
-    const stats = [[S.statStudents, "শিক্ষার্থী"], [S.statTeachers, "শিক্ষক-শিক্ষিকা"], ["৭", "শ্রেণি (৬ষ্ঠ–আলিম)"], [S.statPass, "পাসের হার"]].filter(s => s[0]);
-    $("#stats").innerHTML = stats.map(([v, l]) => `<div class="stat"><b>${esc(bnNum(v))}</b><span>${l}</span></div>`).join("");
     if (!S.admissionOpen) $("#heroAdmission").textContent = "ভর্তি তথ্য";
     $("#admissionBadge").textContent = S.admissionOpen ? `${bnNum(S.admissionSession)} শিক্ষাবর্ষে ভর্তি চলছে` : "স্বাগতম";
-    $("#classStrip").innerHTML = CLASSES.map(c => `<a class="class-pill" href="academics.html#${encodeURIComponent(c.name)}"><b>${c.short}</b><span>${c.name}</span><small>${c.level}</small></a>`).join("");
+    $("#admSlideTitle").innerHTML = S.admissionOpen ? `${esc(bnNum(S.admissionSession))} শিক্ষাবর্ষে <span>ভর্তি চলছে</span>` : `ভর্তি <span>তথ্য</span>`;
+
+    // ---- quick result search (inside hero)
+    const qf = $("#quickResult"), y = new Date().getFullYear();
+    qf.elements.className.innerHTML = CLASSES.map(c => `<option>${c.name}</option>`).join("");
+    qf.elements.exam.innerHTML = EXAMS.map(c => `<option>${c}</option>`).join("");
+    qf.elements.exam.value = "বার্ষিক পরীক্ষা";
+    qf.elements.year.innerHTML = Array.from({ length: 8 }, (_, i) => `<option value="${y - i}">${bnNum(y - i)}</option>`).join("");
+    qf.addEventListener("submit", e => {
+      e.preventDefault(); if (!qf.reportValidity()) return;
+      const q = new URLSearchParams({ year: qf.elements.year.value, exam: qf.elements.exam.value, className: qf.elements.className.value, roll: qf.elements.roll.value.trim() });
+      location.href = "results.html?" + q;
+    });
+
+    // ---- statistics with count-up
+    const years = /^\d{4}$/.test(String(S.estd).replace(/[০-৯]/g, d => "০১২৩৪৫৬৭৮৯".indexOf(d))) ? new Date().getFullYear() - Number(String(S.estd).replace(/[০-৯]/g, d => "০১২৩৪৫৬৭৮৯".indexOf(d))) : 0;
+    const stats = [[S.statStudents, "শিক্ষার্থী", "users"], [S.statTeachers, "শিক্ষক-শিক্ষিকা", "user"], ["7", "শ্রেণি (৬ষ্ঠ–আলিম)", "book"], [S.statPass, "পাসের হার", "award"], [years > 0 ? String(years) + "+" : "", "বছরের পথচলা", "calendar"],
+      ["3", "শিক্ষা স্তর (নিম্ন মাধ্যমিক, দাখিল, আলিম)", "cap"], ["2", "বিভাগ (সাধারণ ও বিজ্ঞান)", "list"]].filter(s => s[0]).slice(0, 4);
+    $("#stats").innerHTML = stats.map(([v, l, ic]) => `<div class="stat"><span class="stat-ic">${icon(ic)}</span><div><b data-count="${esc(v)}">${esc(bnNum(v))}</b><span>${l}</span></div></div>`).join("");
+    countUp($$("#stats [data-count]"));
+
+    // ---- class strip with level filter
+    const levels = ["সব", ...new Set(CLASSES.map(c => c.level))];
+    const drawClasses = lv => {
+      $$("#levelTabs button").forEach(b => b.classList.toggle("active", b.dataset.lv === lv));
+      $("#classStrip").innerHTML = CLASSES.filter(c => lv === "সব" || c.level === lv).map(c => `<a class="class-pill" href="academics.html#${encodeURIComponent(c.name)}"><b>${c.short}</b><span>${c.name}</span><small>${c.level}</small><i class="cp-go">${icon("arrowRight", "sm")}</i></a>`).join("");
+    };
+    $("#levelTabs").innerHTML = levels.map(l => `<button type="button" role="tab" data-lv="${esc(l)}">${esc(l === "সব" ? "সকল শ্রেণি" : l)}</button>`).join("");
+    $("#levelTabs").addEventListener("click", e => { const b = e.target.closest("button"); if (b) drawClasses(b.dataset.lv); });
+    drawClasses("সব");
+
+    // ---- admission countdown
+    const deadline = S.admissionOpen && S.admissionLastDate ? new Date(S.admissionLastDate + "T23:59:59") : null;
+    if (deadline && deadline > new Date()) {
+      $("#admCard").hidden = false;
+      $("#admCardTitle").textContent = `${bnNum(S.admissionSession)} শিক্ষাবর্ষে ভর্তির শেষ সময়`;
+      $("#countdown").hidden = false;
+      startCountdown(deadline, [$("#countdown"), $("#countdown2")]);
+    }
+
+    // ---- data
+    let gallery = [];
     try {
       const [n, ev, g] = await Promise.all([store.list("notices", { publicOnly: true }), store.list("events", { publicOnly: true }), store.list("gallery", { publicOnly: true })]);
-      $("#homeNotices").innerHTML = n.length ? sortNotices(n).slice(0, 5).map(noticeItem).join("") : empty("এখনো কোনো নোটিশ প্রকাশিত হয়নি।");
+      gallery = g;
+      const sorted = sortNotices(n);
+      const cats = ["সব", ...new Set(sorted.map(x => x.category || "সাধারণ"))].slice(0, 6);
+      const drawNotices = c => {
+        $$("#noticeTabs button").forEach(b => b.classList.toggle("active", b.dataset.c === c));
+        const f = sorted.filter(x => c === "সব" || (x.category || "সাধারণ") === c).slice(0, 5);
+        $("#homeNotices").innerHTML = f.length ? f.map(noticeItem).join("") : empty("এই বিভাগে কোনো নোটিশ নেই।");
+      };
+      $("#noticeTabs").innerHTML = cats.length > 2 ? cats.map(c => `<button type="button" role="tab" data-c="${esc(c)}">${esc(c)}</button>`).join("") : "";
+      $("#noticeTabs").addEventListener("click", e => { const b = e.target.closest("button"); if (b) drawNotices(b.dataset.c); });
+      if (sorted.length) drawNotices("সব"); else $("#homeNotices").innerHTML = empty("এখনো কোনো নোটিশ প্রকাশিত হয়নি।");
       const today = new Date().toISOString().slice(0, 10);
       const up = ev.filter(e => (e.date || "") >= today).sort((a, b) => a.date.localeCompare(b.date)).slice(0, 4);
       $("#homeEvents").innerHTML = up.length ? up.map(eventItem).join("") : empty("আসন্ন কোনো অনুষ্ঠান নেই।");
-      $("#homeGallery").innerHTML = g.length ? g.slice(0, 8).map(galleryItem).join("") : empty("গ্যালারিতে ছবি যোগ করা হলে এখানে দেখা যাবে।");
+      const pics = g.filter(x => !x.slider).concat(g.filter(x => x.slider));
+      $("#homeGallery").innerHTML = pics.length ? pics.slice(0, 8).map(galleryItem).join("") : empty("গ্যালারিতে ছবি যোগ করা হলে এখানে দেখা যাবে।");
       bindGallery(g);
     } catch (e) { $("#homeNotices").innerHTML = errBox(e); }
+
+    // ---- hero slider (photos marked "show on home slider" in admin → gallery)
+    heroSlider(gallery.filter(x => x.slider && safeUrl(x.imageUrl)).map(x => safeUrl(x.imageUrl)));
   },
 
   async about() {
@@ -366,13 +420,104 @@ function printApplication(a) {
   w.document.close();
 }
 
+// ---------------------------------------------------------------- Interactive helpers
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const toLatin = s => String(s).replace(/[০-৯]/g, d => "০১২৩৪৫৬৭৮৯".indexOf(d));
+
+/** Animate numbers like "650+", "৯৮%" from 0 when they scroll into view. */
+function countUp(els) {
+  const run = el => {
+    const m = toLatin(el.dataset.count).match(/^(\D*)(\d+(?:\.\d+)?)(.*)$/);
+    if (!m || reduceMotion) return;
+    const [, pre, num, suf] = m, target = Number(num), dec = (num.split(".")[1] || "").length, t0 = performance.now(), dur = 1400;
+    const step = t => {
+      const k = Math.min(1, (t - t0) / dur), v = target * (1 - Math.pow(1 - k, 3));
+      el.textContent = bnNum(pre + v.toFixed(dec) + suf);
+      if (k < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  };
+  if (!("IntersectionObserver" in window)) return;
+  const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { run(e.target); io.unobserve(e.target); } }), { threshold: .6 });
+  els.forEach(el => io.observe(el));
+}
+
+/** Days / hours / minutes / seconds until the admission deadline. */
+function startCountdown(deadline, boxes) {
+  const units = [["দিন", 86400], ["ঘণ্টা", 3600], ["মিনিট", 60], ["সেকেন্ড", 1]];
+  const tick = () => {
+    let s = Math.max(0, Math.floor((deadline - Date.now()) / 1000));
+    const html = units.map(([l, n]) => { const v = Math.floor(s / n); s -= v * n; return `<div><b>${bnNum(String(v).padStart(2, "0"))}</b><span>${l}</span></div>`; }).join("");
+    boxes.forEach(b => b && (b.innerHTML = html));
+  };
+  tick(); setInterval(tick, 1000);
+}
+
+/** Hero carousel: rotating text slides + optional background photos. */
+function heroSlider(images) {
+  const hero = $("#hero"), slides = $$(".hero-slide", hero), bg = $("#heroBg"), dots = $("#heroDots");
+  if (!hero || !slides.length) return;
+  bg.innerHTML = images.map((u, i) => `<div class="bg-img${i === 0 ? " on" : ""}" style="background-image:url('${esc(u).replace(/'/g, "%27")}')"></div>`).join("");
+  hero.classList.toggle("has-photo", images.length > 0);
+  dots.innerHTML = slides.map((_, i) => `<button type="button" role="tab" aria-label="স্লাইড ${bnNum(i + 1)}"></button>`).join("");
+  let i = 0, timer = null;
+  const go = n => {
+    i = (n + slides.length) % slides.length;
+    slides.forEach((s, k) => { s.classList.toggle("active", k === i); s.setAttribute("aria-hidden", k !== i); s.inert = k !== i; });
+    $$("button", dots).forEach((d, k) => { d.classList.toggle("active", k === i); d.setAttribute("aria-selected", k === i); });
+    if (images.length) $$(".bg-img", bg).forEach((b, k) => b.classList.toggle("on", k === i % images.length));
+  };
+  const play = () => { stop(); if (!reduceMotion) timer = setInterval(() => go(i + 1), 7000); };
+  const stop = () => clearInterval(timer);
+  $("#heroPrev").onclick = () => { go(i - 1); play(); };
+  $("#heroNext").onclick = () => { go(i + 1); play(); };
+  dots.addEventListener("click", e => { const b = e.target.closest("button"); if (b) { go([...dots.children].indexOf(b)); play(); } });
+  hero.addEventListener("mouseenter", stop); hero.addEventListener("mouseleave", play);
+  hero.addEventListener("focusin", stop); hero.addEventListener("focusout", play);
+  hero.addEventListener("keydown", e => { if (e.target.closest("input,select,textarea")) return; if (e.key === "ArrowLeft") go(i - 1); if (e.key === "ArrowRight") go(i + 1); });
+  let x0 = null;
+  $("#heroSlides").addEventListener("touchstart", e => { x0 = e.touches[0].clientX; }, { passive: true });
+  $("#heroSlides").addEventListener("touchend", e => { if (x0 === null) return; const dx = e.changedTouches[0].clientX - x0; if (Math.abs(dx) > 50) { go(i + (dx < 0 ? 1 : -1)); play(); } x0 = null; });
+  document.addEventListener("visibilitychange", () => document.hidden ? stop() : play());
+  go(0); play();
+}
+
+/** Fade sections in as they scroll into view. */
+function setupReveal() {
+  const els = $$(".reveal");
+  if (reduceMotion || !("IntersectionObserver" in window)) { els.forEach(e => e.classList.add("in")); return; }
+  const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }), { threshold: .12, rootMargin: "0px 0px -40px 0px" });
+  els.forEach(e => io.observe(e));
+}
+
+function backToTop() {
+  const b = document.createElement("button");
+  b.type = "button"; b.className = "to-top"; b.setAttribute("aria-label", "উপরে যান"); b.innerHTML = icon("arrowRight");
+  b.onclick = () => scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" });
+  document.body.append(b);
+  const header = $(".site-header");
+  const onScroll = () => { b.classList.toggle("show", scrollY > 600); header?.classList.toggle("scrolled", scrollY > 10); };
+  addEventListener("scroll", onScroll, { passive: true }); onScroll();
+}
+
+/** This repository used to host another app with a service worker at the same
+    address; remove any such leftover worker so it can't serve stale pages. */
+function cleanupOldServiceWorkers() {
+  const base = new URL(".", location.href).href;
+  navigator.serviceWorker?.getRegistrations?.().then(rs => rs.forEach(r => { if (r.scope.startsWith(base)) r.unregister(); })).catch(() => { });
+}
+
 // ---------------------------------------------------------------- Boot
+document.documentElement.classList.add("js");
 (async function boot() {
   try { S = await store.getSettings(); } catch { S = (await import("./config.js")).DEFAULT_SETTINGS; }
   renderLayout();
   hydrateIcons();
   $$("[data-s-text]").forEach(el => { const v = S[el.dataset.sText]; if (v) el.textContent = v; });
   ticker();
+  setupReveal();
+  backToTop();
+  cleanupOldServiceWorkers();
   try { await pages[page]?.(); } catch (e) { console.error(e); }
   applyLang(); // re-apply language after dynamic content
 })();
