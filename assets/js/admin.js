@@ -414,10 +414,10 @@ function printIdCards(list) {
   const w = window.open("", "_blank"); if (!w) return toast("পপ-আপ চালু করুন", "err");
   w.document.write(`<!doctype html><html lang="bn"><head><meta charset="utf-8"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600&family=Noto+Serif+Bengali:wght@400;600&display=swap"><title>আইডি কার্ড</title><style>
   body{font-family:"Noto Sans","SutonnyOMJ","Noto Serif Bengali",sans-serif;margin:10mm}.grid{display:grid;grid-template-columns:repeat(3,54mm);gap:6mm}
-  .c{width:54mm;height:86mm;border:1px solid #0d3b33;border-radius:3mm;overflow:hidden;page-break-inside:avoid;text-align:center;font-size:8.5pt}
-  .h{background:#0d3b33;color:#fff;padding:2mm;font-size:8pt;line-height:1.25}.h svg{width:9mm;height:9mm;display:block;margin:0 auto 1mm}
+  .c{width:54mm;height:86mm;border:1px solid #162c55;border-radius:3mm;overflow:hidden;page-break-inside:avoid;text-align:center;font-size:8.5pt}
+  .h{background:#162c55;color:#fff;padding:2mm;font-size:8pt;line-height:1.25}.h svg{width:9mm;height:9mm;display:block;margin:0 auto 1mm}
   .p{width:20mm;height:24mm;object-fit:cover;border:1px solid #ccc;margin:2mm auto 1mm;display:grid;place-items:center;color:#999;font-size:7pt}
-  b{display:block;font-size:10pt;color:#0d3b33}table{margin:1mm auto;font-size:8pt;text-align:left}td{padding:0 1mm}.f{background:#d4af5a;color:#0d3b33;font-size:7pt;padding:1mm;margin-top:1mm}
+  b{display:block;font-size:10pt;color:#162c55}table{margin:1mm auto;font-size:8pt;text-align:left}td{padding:0 1mm}.f{background:#d4af5a;color:#162c55;font-size:7pt;padding:1mm;margin-top:1mm}
   </style></head><body><div class="grid">${list.map(s => `<div class="c"><div class="h">${LOGO_SVG}${esc(S.nameBn)}</div>
   ${safeUrl(s.photoUrl) ? `<img class="p" src="${esc(safeUrl(s.photoUrl))}">` : `<div class="p">ছবি</div>`}<b>${esc(s.name)}</b>
   <table><tr><td>আইডি</td><td>: ${esc(s.studentId)}</td></tr><tr><td>শ্রেণি</td><td>: ${esc(s.className)}</td></tr><tr><td>রোল</td><td>: ${esc(s.roll)}</td></tr><tr><td>শিক্ষাবর্ষ</td><td>: ${esc(s.session)}</td></tr><tr><td>রক্ত</td><td>: ${esc(s.blood || "—")}</td></tr><tr><td>মোবাইল</td><td>: ${esc(s.guardianPhone || "—")}</td></tr></table>

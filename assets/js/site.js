@@ -27,7 +27,7 @@ function renderLayout() {
   if (head) head.innerHTML = `
   <div class="topbar"><div class="container topbar-in">
     <span class="tb-left"><span data-s="phone-line"></span><span data-s="email-line"></span></span>
-    <span class="tb-right"><a href="admin.html" class="tb-admin">${icon("lock")}<span data-en="Admin Portal">অ্যাডমিন পোর্টাল</span></a><button class="lang-btn" id="langBtn" type="button" data-no-tr>English</button></span>
+    <span class="tb-right"><a href="admission.html" class="tb-cta">ভর্তি আবেদন</a><a href="admin.html" class="tb-admin">${icon("lock")}<span data-en="Admin Portal">অ্যাডমিন পোর্টাল</span></a><button class="lang-btn" id="langBtn" type="button" data-no-tr>English</button></span>
   </div></div>
   <header class="site-header"><div class="container header-in">
     <a class="brand" href="index.html">${LOGO_SVG}<span><strong data-s="nameBn">${esc(S.nameBn)}</strong><small data-s="nameEn">${esc(S.nameEn)}</small></span></a>
