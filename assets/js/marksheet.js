@@ -8,7 +8,7 @@ const FONTS = "https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;6
 
 /** Styles for the sheet. Sizes are in em so one font-size on .rs scales everything. */
 export const SHEET_CSS = `
-.rs{--g:#0f5c3a;--gd:#093a25;--gold:#c79a2b;--gold-l:#f6edd3;--line:#d7ddd8;--soft:#f5f8f5;--ink:#15211b;--mute:#5b6861;
+.rs{--g:#1e3a6e;--gd:#162c55;--gold:#d9a02a;--gold-l:#f6edd3;--line:#d7ddd8;--soft:#f5f8f5;--ink:#15211b;--mute:#5b6861;
   position:relative;background:#fff;color:var(--ink);font-family:"Noto Sans","SutonnyOMJ","Noto Serif Bengali",sans-serif;font-size:15px;line-height:1.5;
   -webkit-print-color-adjust:exact;print-color-adjust:exact;text-align:left}
 .rs *{box-sizing:border-box}
@@ -138,8 +138,8 @@ export function printSheets(list, S) {
 @page{size:A4 portrait;margin:0}
 html,body{margin:0;padding:0}
 body{background:#e7ebe8;font-family:"Noto Sans","SutonnyOMJ","Noto Serif Bengali",sans-serif}
-.bar{position:sticky;top:0;z-index:5;display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;padding:10px;background:#093a25;color:#fff;font-size:14px}
-.bar button{font:inherit;font-weight:600;border:0;border-radius:8px;padding:8px 18px;cursor:pointer;background:#c79a2b;color:#062619}
+.bar{position:sticky;top:0;z-index:5;display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;padding:10px;background:#162c55;color:#fff;font-size:14px}
+.bar button{font:inherit;font-weight:600;border:0;border-radius:8px;padding:8px 18px;cursor:pointer;background:#c79a2b;color:#0e1d3a}
 .bar button.ghost{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.5)}
 .pages{display:flex;flex-direction:column;align-items:center;gap:16px;padding:16px 0 32px}
 .page{width:210mm;height:297mm;padding:9mm;background:#fff;box-shadow:0 6px 24px rgba(0,0,0,.18);overflow:hidden;zoom:var(--z,1)}
