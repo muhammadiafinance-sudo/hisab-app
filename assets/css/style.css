@@ -628,3 +628,5 @@ html[lang="en"] .main-nav a { padding-inline: 10px; }
 .site-footer { border-top: 4px solid var(--gold); }
 .to-top { border-radius: 2px; }
 .ticker-in > b { border-radius: 2px; background: var(--brand); } .ticker-move .sep { background: var(--gold); }
+.subj-code { display: inline-block; min-width: 2.8em; margin-right: 6px; padding: 0 6px; font-size: .8rem; font-weight: 700; text-align: center; color: var(--brand); background: var(--brand-tint); border: 1px solid var(--brand-line); border-radius: 2px; }
+details ol li { margin-bottom: 4px; }

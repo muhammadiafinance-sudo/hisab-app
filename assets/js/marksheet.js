@@ -46,6 +46,7 @@ export const SHEET_CSS = `
 .rs-table tbody tr:nth-child(even) td{background:var(--soft)}
 .rs-table .n{text-align:center;white-space:nowrap}
 .rs-table .sl{width:2.6em;text-align:center;color:var(--mute)}
+.rs-table .code{width:4.2em}
 .rs-table th.sl{color:#fff}
 .rs-table tr.f td{color:#b42318;font-weight:600}
 .rs-table tfoot td{background:var(--gold-l);font-weight:700;border-color:#e7d7a8}
@@ -77,6 +78,7 @@ tr.f .rs-grade{background:#fde8e6;color:#b42318}
   .rs.screen .rs-info div,.rs.screen .rs-info div:nth-child(odd){border-right:0;border-bottom:.07em solid var(--line)}
   .rs.screen .rs-info div:last-child{border-bottom:0}
   .rs.screen .rs-table .sl{display:none}
+  .rs.screen .rs-table .code{width:auto;font-size:.85em}
   .rs.screen .rs-table th,.rs.screen .rs-table td{padding:.4em .35em}
   .rs.screen .rs-sum{grid-template-columns:repeat(3,minmax(0,1fr))}
   .rs.screen .rs-bottom{grid-template-columns:1fr}
@@ -93,6 +95,7 @@ function verifyUrl(r) {
 /** One sheet. mode = "screen" (responsive) or "print" (A4). */
 export function sheetHTML(r, S, mode = "screen") {
   const c = computeResult(r.subjects);
+  const hasCode = c.rows.some(x => x.code);
   const pct = c.fullTotal ? (c.total / c.fullTotal) * 100 : 0;
   const info = [["শিক্ষার্থীর নাম", r.studentName], ["রোল নম্বর", bnNum(r.roll)], ["পিতার নাম", r.fatherName || "—"], ["শ্রেণি", tr(r.className) + (r.group ? ` (${tr(r.group)})` : "")], ["পরীক্ষা", tr(r.exam)], ["শিক্ষাবর্ষ", bnNum(r.year)]];
   const sum = [["মোট নম্বর", `${bnNum(c.total)}/${bnNum(c.fullTotal)}`], ["শতকরা", bnNum(pct.toFixed(1)) + "%"], ["জিপিএ", bnNum(c.gpa.toFixed(2))], ["লেটার গ্রেড", c.grade], [L("ফলাফল", "Result"), `<span class="${c.passed ? "pass" : "fail"}">${c.passed ? "উত্তীর্ণ" : "অনুত্তীর্ণ"}</span>`]];
@@ -109,9 +112,9 @@ export function sheetHTML(r, S, mode = "screen") {
     </header>
     <div class="rs-ribbon"><span>একাডেমিক ট্রান্সক্রিপ্ট</span><em>${esc(tr(r.exam))} — ${bnNum(r.year)}</em></div>
     <dl class="rs-info">${info.map(([k, v]) => `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join("")}</dl>
-    <table class="rs-table"><thead><tr><th class="sl">ক্রম</th><th>বিষয়</th><th class="n">পূর্ণমান</th><th class="n">প্রাপ্ত নম্বর</th><th class="n">লেটার গ্রেড</th><th class="n">গ্রেড পয়েন্ট</th></tr></thead>
-      <tbody>${c.rows.map((s, i) => `<tr class="${s.grade === "F" ? "f" : ""}"><td class="sl">${bnNum(i + 1)}</td><td>${esc(tr(s.subject))}</td><td class="n">${bnNum(s.full)}</td><td class="n">${s.marks === "AB" ? "অনুপস্থিত" : bnNum(s.marks)}</td><td class="n"><span class="rs-grade">${s.grade}</span></td><td class="n">${bnNum(s.gp.toFixed(2))}</td></tr>`).join("")}</tbody>
-      <tfoot><tr><td class="sl"></td><td>সর্বমোট</td><td class="n">${bnNum(c.fullTotal)}</td><td class="n">${bnNum(c.total)}</td><td class="n">${c.grade}</td><td class="n">${bnNum(c.gpa.toFixed(2))}</td></tr></tfoot></table>
+    <table class="rs-table"><thead><tr><th class="sl">ক্রম</th>${hasCode ? `<th class="n code">কোড</th>` : ""}<th>বিষয়</th><th class="n">পূর্ণমান</th><th class="n">প্রাপ্ত নম্বর</th><th class="n">লেটার গ্রেড</th><th class="n">গ্রেড পয়েন্ট</th></tr></thead>
+      <tbody>${c.rows.map((s, i) => `<tr class="${s.grade === "F" ? "f" : ""}"><td class="sl">${bnNum(i + 1)}</td>${hasCode ? `<td class="n code">${esc(bnNum(s.code || "—"))}</td>` : ""}<td>${esc(isEn() && s.subjectEn ? s.subjectEn : tr(s.subject))}</td><td class="n">${bnNum(s.full)}</td><td class="n">${s.marks === "AB" ? "অনুপস্থিত" : bnNum(s.marks)}</td><td class="n"><span class="rs-grade">${s.grade}</span></td><td class="n">${bnNum(s.gp.toFixed(2))}</td></tr>`).join("")}</tbody>
+      <tfoot><tr><td class="sl"></td>${hasCode ? "<td></td>" : ""}<td>সর্বমোট</td><td class="n">${bnNum(c.fullTotal)}</td><td class="n">${bnNum(c.total)}</td><td class="n">${c.grade}</td><td class="n">${bnNum(c.gpa.toFixed(2))}</td></tr></tfoot></table>
     <div class="rs-sum" style="--cols:${sum.length}">${sum.map(([k, v]) => `<div><span>${k}</span><b>${v}</b></div>`).join("")}</div>
     <div class="rs-bottom">
       <table class="rs-scale"><caption>গ্রেডিং পদ্ধতি</caption><tr><th>নম্বর</th>${GRADE_SCALE.map(([min], i) => `<td>${bnNum(i === 0 ? "৮০+" : min + "–" + (GRADE_SCALE[i - 1][0] - 1))}</td>`).join("")}</tr><tr><th>গ্রেড</th>${GRADE_SCALE.map(([, g]) => `<td>${g}</td>`).join("")}</tr><tr><th>পয়েন্ট</th>${GRADE_SCALE.map(([, , gp]) => `<td>${bnNum(gp.toFixed(1))}</td>`).join("")}</tr></table>

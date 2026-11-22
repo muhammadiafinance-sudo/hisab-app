@@ -36,7 +36,24 @@ export const DEFAULT_SUBJECTS = {
   "ষষ্ঠ শ্রেণি": JR, "সপ্তম শ্রেণি": JR, "অষ্টম শ্রেণি": JR,
   "নবম শ্রেণি": DK, "দশম শ্রেণি": DK, "আলিম ১ম বর্ষ": AL, "আলিম ২য় বর্ষ": AL
 };
-export const subjectsFor = (settings, cls) => (settings?.subjects?.[cls]?.length ? settings.subjects[cls] : DEFAULT_SUBJECTS[cls]) || [];
+/** Default pass mark: 33% of full marks (Bangladesh board rule), rounded up. */
+export const defaultPass = full => Math.ceil((Number(full) || 100) * 0.33);
+/** A subject as managed by the admin: { code, name, nameEn, full, pass, group }.
+ *  group "" = all students, otherwise "সাধারণ" or "বিজ্ঞান". Plain strings (older data) are accepted. */
+export function normSubject(s) {
+  if (typeof s === "string") s = { name: s };
+  const full = Number(s.full) > 0 ? Number(s.full) : 100;
+  const pass = s.pass === "" || s.pass == null || isNaN(Number(s.pass)) ? defaultPass(full) : Number(s.pass);
+  return { code: String(s.code || "").trim(), name: String(s.name || s.subject || "").trim(), nameEn: String(s.nameEn || "").trim(), full, pass, group: s.group || "" };
+}
+/** Subjects of a class (admin's list, or the default list if the admin never saved one).
+ *  With `group`, only subjects for everyone plus that group's subjects are returned. */
+export function subjectsFor(settings, cls, group) {
+  const raw = Array.isArray(settings?.subjects?.[cls]) ? settings.subjects[cls] : (DEFAULT_SUBJECTS[cls] || []);
+  let list = raw.map(normSubject).filter(s => s.name);
+  if (group) list = list.filter(s => !s.group || s.group === group);
+  return list;
+}
 
 // ---------------------------------------------------------------- Grading (Bangladesh scale)
 export const GRADE_SCALE = [
@@ -51,12 +68,20 @@ export function gradeFromGpa(g) {
   if (g >= 5) return "A+"; if (g >= 4) return "A"; if (g >= 3.5) return "A-";
   if (g >= 3) return "B"; if (g >= 2) return "C"; if (g >= 1) return "D"; return "F";
 }
-/** subjects: [{subject, full, marks}] → computed summary */
+/** subjects: [{subject, code?, full, pass?, marks}] → computed summary.
+ *  The grade comes from the percentage (GRADE_SCALE). If the subject has its own pass
+ *  mark, below it is always F, and at or above it is never F (at least D). */
 export function computeResult(subjects = []) {
   const rows = subjects.filter(s => s && s.subject).map(s => {
     const absent = s.marks === "" || s.marks === null || s.marks === undefined || String(s.marks).toUpperCase() === "AB";
-    const g = absent ? { grade: "F", gp: 0 } : gradeOf(s.marks, s.full || 100);
-    return { ...s, full: Number(s.full || 100), marks: absent ? "AB" : Number(s.marks), ...g };
+    const full = Number(s.full || 100);
+    const pass = s.pass === "" || s.pass == null || isNaN(Number(s.pass)) ? null : Number(s.pass);
+    let g = absent ? { grade: "F", gp: 0 } : gradeOf(s.marks, full);
+    if (!absent && pass !== null) {
+      if (Number(s.marks) < pass) g = { grade: "F", gp: 0 };
+      else if (g.grade === "F") g = { grade: "D", gp: 1.0 };
+    }
+    return { ...s, code: s.code || "", full, pass, marks: absent ? "AB" : Number(s.marks), ...g };
   });
   const total = rows.reduce((a, r) => a + (typeof r.marks === "number" ? r.marks : 0), 0);
   const fullTotal = rows.reduce((a, r) => a + r.full, 0);
