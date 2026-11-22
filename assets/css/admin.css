@@ -166,3 +166,17 @@ code { padding: 1px 6px; font-family: var(--mono); font-size: .85em; background:
 @media (max-width: 700px) { .doc-row { grid-template-columns: 1fr; } .sticky-actions { flex-wrap: wrap; } }
 .private-note { display: flex; gap: 12px; align-items: flex-start; margin: 4px 0 16px; padding: 12px 14px; border: 1px solid var(--brand-line); background: var(--brand-tint); border-radius: var(--r); font-size: .9rem; color: var(--text-2); }
 .private-note .ic { color: var(--brand); margin-top: .2em; }
+
+/* Subjects & marks */
+.subj-admin td { padding: 6px 8px; }
+.subj-admin input, .subj-admin select { min-height: 38px; padding: 6px 8px; }
+.subj-admin .w-ord { width: 52px; text-align: center; color: var(--muted); }
+.subj-admin .w-code { width: 110px; }
+.subj-admin .w-num { width: 100px; }
+.subj-admin .w-grp { width: 130px; }
+.subj-admin tr.row-err td { background: var(--err-bg); }
+.ic.rot-up { transform: rotate(-90deg); }
+.ic.rot-down { transform: rotate(90deg); }
+.icon-btn:disabled { opacity: .3; cursor: default; }
+.dirty-note { margin-right: 12px; font-size: .875rem; color: var(--warn); }
+.subj-table td input[data-k="code"] { min-width: 0; }

@@ -1,5 +1,5 @@
 // Admin portal
-import { $, $$, esc, safeUrl, bnNum, fmtDate, CLASSES, GROUPS, EXAMS, NOTICE_CATS, DEFAULT_SUBJECTS, subjectsFor, computeResult, toast, modal, avatar, downloadFile, toCSV, parseCSV, LOGO_SVG, icon, hydrateIcons } from "./common.js";
+import { $, $$, esc, safeUrl, bnNum, fmtDate, CLASSES, GROUPS, EXAMS, NOTICE_CATS, DEFAULT_SUBJECTS, subjectsFor, normSubject, defaultPass, computeResult, toast, modal, avatar, downloadFile, toCSV, parseCSV, LOGO_SVG, icon, hydrateIcons } from "./common.js";
 import * as store from "./store.js";
 import { screenSheet, printSheets } from "./marksheet.js";
 import { openStaffForm, printStaffForms, exportStaffCSV, staffProgress, STAFF_DOCS } from "./staff.js";
@@ -84,6 +84,7 @@ const SECTIONS = [
   ["dashboard", "grid", "ড্যাশবোর্ড"],
   ["notices", "bell", "নোটিশ"],
   ["results", "chart", "ফলাফল"],
+  ["subjects", "book", "বিষয় ও নম্বর"],
   ["admissions", "inbox", "ভর্তি আবেদন"],
   ["students", "cap", "শিক্ষার্থী"],
   ["teachers", "users", "শিক্ষক ও কমিটি"],
@@ -573,6 +574,116 @@ const VIEWS = {
     });
   },
 
+  // ----------------------------------------------------------------- Subjects & marks (per class)
+  async subjects() {
+    S = await store.getSettings(true);
+    let cls = sessionStorage.getItem("siam_subj_cls") || CLASS_NAMES[0];
+    let rows = [];          // working copy for the selected class
+    let dirty = false;
+    view().innerHTML = `
+      <div class="toolbar">
+        <select id="sCls" aria-label="শ্রেণি">${CLASS_NAMES.map(c => `<option value="${esc(c)}" ${c === cls ? "selected" : ""}>${esc(c)}</option>`).join("")}</select>
+        <span class="spacer"></span>
+        <button class="btn btn-ghost" id="sCopy">${icon("download")}অন্য শ্রেণি থেকে কপি</button>
+        <button class="btn btn-ghost" id="sDefault">${icon("list")}ডিফল্ট তালিকা যোগ</button>
+        <button class="btn btn-primary" id="sAdd">${icon("plus")}নতুন বিষয়</button>
+      </div>
+      <p class="muted small">প্রতিটি শ্রেণির বিষয়, বিষয় কোড, পূর্ণমান ও পাস নম্বর এখানে ঠিক করুন। ফলাফল এন্ট্রি, CSV আমদানি, মার্কশিট ও ওয়েবসাইটের একাডেমিক পাতায় এই তালিকা ব্যবহৃত হবে। পাস নম্বরের কম পেলে সেই বিষয়ে F হবে। <b>বিভাগ</b> "সবার জন্য" হলে সব শিক্ষার্থীর, নইলে শুধু সেই বিভাগের শিক্ষার্থীর ফলাফলে বিষয়টি আসবে।</p>
+      <form id="subjForm" novalidate>
+        <div class="table-wrap"><table class="table subj-admin"><thead><tr><th class="w-ord">ক্রম</th><th class="w-code">বিষয় কোড</th><th>বিষয়ের নাম (বাংলা) *</th><th>Subject name (English)</th><th class="w-num">পূর্ণমান</th><th class="w-num">পাস নম্বর</th><th class="w-grp">বিভাগ</th><th class="act"></th></tr></thead><tbody id="sRows"></tbody></table></div>
+        <p class="muted small" id="sCount"></p>
+        <div class="sticky-save"><span class="dirty-note" id="sDirty" hidden>অসংরক্ষিত পরিবর্তন আছে</span><button class="btn btn-primary btn-lg" type="submit">${icon("check")}সংরক্ষণ করুন</button></div>
+      </form>`;
+    const tb = $("#sRows");
+    const groupSel = g => `<select data-k="group"><option value="" ${!g ? "selected" : ""}>সবার জন্য</option>${GROUPS.map(x => `<option value="${esc(x)}" ${g === x ? "selected" : ""}>${esc(x)}</option>`).join("")}</select>`;
+    const rowHtml = (r, i) => `<tr data-i="${i}">
+      <td class="w-ord">${bnNum(i + 1)}</td>
+      <td class="w-code"><input data-k="code" value="${esc(r.code)}" placeholder="যেমন: 101" maxlength="12"></td>
+      <td><input data-k="name" value="${esc(r.name)}" required maxlength="80"></td>
+      <td><input data-k="nameEn" value="${esc(r.nameEn)}" maxlength="80" placeholder="optional"></td>
+      <td class="w-num"><input data-k="full" type="number" min="1" max="1000" value="${esc(r.full)}" required></td>
+      <td class="w-num"><input data-k="pass" type="number" min="0" max="1000" value="${esc(r.pass)}" required></td>
+      <td class="w-grp">${groupSel(r.group)}</td>
+      <td class="act"><button type="button" class="icon-btn" data-up="${i}" title="ওপরে" ${i === 0 ? "disabled" : ""}>${icon("arrowRight", "rot-up")}</button><button type="button" class="icon-btn" data-down="${i}" title="নিচে" ${i === rows.length - 1 ? "disabled" : ""}>${icon("arrowRight", "rot-down")}</button><button type="button" class="icon-btn danger" data-del="${i}" title="মুছুন">${icon("trash")}</button></td></tr>`;
+    const draw = () => {
+      tb.innerHTML = rows.length ? rows.map(rowHtml).join("") : `<tr><td colspan="8"><div class="empty">এই শ্রেণিতে কোনো বিষয় নেই। "নতুন বিষয়" বাটনে ক্লিক করে যোগ করুন।</div></td></tr>`;
+      const fullSum = rows.reduce((a, r) => a + (Number(r.full) || 0), 0);
+      $("#sCount").textContent = `${cls}: মোট ${bnNum(rows.length)}টি বিষয় · মোট পূর্ণমান ${bnNum(fullSum)}`;
+      $("#sDirty").hidden = !dirty;
+    };
+    // keep the working copy in sync with the inputs
+    const readRows = () => { $$("tr[data-i]", tb).forEach(tr => { const r = rows[tr.dataset.i]; $$("[data-k]", tr).forEach(el => { r[el.dataset.k] = el.value; }); }); };
+    const load = () => { rows = subjectsFor(S, cls).map(s => ({ ...s })); dirty = false; draw(); };
+    load();
+
+    tb.addEventListener("input", e => {
+      dirty = true; $("#sDirty").hidden = false;
+      // when full marks change and pass marks were the default, keep pass at 33%
+      if (e.target.dataset.k === "full") {
+        const tr = e.target.closest("tr"), r = rows[tr.dataset.i], passEl = $('[data-k="pass"]', tr);
+        if (Number(passEl.value) === defaultPass(r.full)) passEl.value = defaultPass(e.target.value);
+        r.full = e.target.value;
+      }
+    });
+    tb.addEventListener("change", () => { dirty = true; $("#sDirty").hidden = false; });
+    tb.addEventListener("click", e => {
+      const b = e.target.closest("button"); if (!b) return;
+      readRows();
+      const swap = (a, c) => { [rows[a], rows[c]] = [rows[c], rows[a]]; };
+      if (b.dataset.up) swap(+b.dataset.up, +b.dataset.up - 1);
+      else if (b.dataset.down) swap(+b.dataset.down, +b.dataset.down + 1);
+      else if (b.dataset.del) { if (!confirm(`"${rows[+b.dataset.del].name || "এই বিষয়"}" তালিকা থেকে সরাবেন?`)) return; rows.splice(+b.dataset.del, 1); }
+      else return;
+      dirty = true; draw();
+    });
+    $("#sAdd").onclick = () => { readRows(); rows.push({ code: "", name: "", nameEn: "", full: 100, pass: defaultPass(100), group: "" }); dirty = true; draw(); $$('[data-k="code"]', tb).pop()?.focus(); };
+    $("#sDefault").onclick = () => {
+      readRows();
+      const have = new Set(rows.map(r => r.name.trim()));
+      const add = (DEFAULT_SUBJECTS[cls] || []).map(normSubject).filter(s => !have.has(s.name));
+      if (!add.length) return toast("ডিফল্ট তালিকার সব বিষয় আগে থেকেই আছে");
+      rows.push(...add); dirty = true; draw(); toast(`${bnNum(add.length)}টি বিষয় যোগ হয়েছে — সংরক্ষণ করতে ভুলবেন না`);
+    };
+    $("#sCopy").onclick = () => {
+      const m = modal(`<h2 class="modal-title">অন্য শ্রেণি থেকে বিষয় কপি</h2><p class="muted">নির্বাচিত শ্রেণির সব বিষয় (কোড, নম্বরসহ) <b>${esc(cls)}</b>-এ কপি হবে।</p>
+        <form class="form-grid"><label class="full">কোন শ্রেণি থেকে<select name="from">${CLASS_NAMES.filter(c => c !== cls).map(c => `<option value="${esc(c)}">${esc(c)} (${bnNum(subjectsFor(S, c).length)}টি বিষয়)</option>`).join("")}</select></label>
+        <label class="check full"><input type="checkbox" name="replace" checked> বর্তমান তালিকা মুছে প্রতিস্থাপন করুন</label>
+        <div class="full form-actions"><button type="button" class="btn btn-ghost" data-cancel>বাতিল</button><button class="btn btn-primary">কপি করুন</button></div></form>`);
+      const f = $("form", m.el); $("[data-cancel]", f).onclick = m.close;
+      f.addEventListener("submit", e => {
+        e.preventDefault(); readRows();
+        const src = subjectsFor(S, f.from.value).map(s => ({ ...s }));
+        rows = f.replace.checked ? src : rows.concat(src.filter(s => !rows.some(r => r.name.trim() === s.name)));
+        dirty = true; draw(); m.close(); toast("কপি হয়েছে — সংরক্ষণ করতে ভুলবেন না");
+      });
+    };
+    $("#sCls").addEventListener("change", e => {
+      readRows();
+      if (dirty && !confirm("এই শ্রেণির অসংরক্ষিত পরিবর্তন বাদ দিয়ে অন্য শ্রেণিতে যাবেন?")) { e.target.value = cls; return; }
+      cls = e.target.value; sessionStorage.setItem("siam_subj_cls", cls); load();
+    });
+
+    $("#subjForm").addEventListener("submit", async e => {
+      e.preventDefault(); readRows();
+      const toNum = v => Number(String(v).replace(/[০-৯]/g, d => "০১২৩৪৫৬৭৮৯".indexOf(d)));
+      const clean = rows.map(r => ({ code: String(r.code).replace(/[০-৯]/g, d => "০১২৩৪৫৬৭৮৯".indexOf(d)).trim(), name: String(r.name).trim(), nameEn: String(r.nameEn).trim(), full: toNum(r.full), pass: toNum(r.pass), group: r.group || "" }));
+      const bad = clean.findIndex(r => !r.name || !(r.full > 0) || isNaN(r.pass) || r.pass < 0 || r.pass > r.full);
+      if (bad >= 0) {
+        const tr = $$("tr[data-i]", tb)[bad]; tr?.classList.add("row-err"); tr?.scrollIntoView({ block: "center" });
+        return toast(`ক্রম ${bnNum(bad + 1)}: বিষয়ের নাম দিন, পূর্ণমান ০-এর বেশি এবং পাস নম্বর ০ থেকে পূর্ণমানের মধ্যে হতে হবে`, "err");
+      }
+      const names = clean.map(r => r.name), codes = clean.map(r => r.code).filter(Boolean);
+      const dupName = names.find((n, i) => names.indexOf(n) !== i), dupCode = codes.find((c, i) => codes.indexOf(c) !== i);
+      if (dupName) return toast(`"${dupName}" বিষয়টি দুবার আছে`, "err");
+      if (dupCode) return toast(`বিষয় কোড ${dupCode} দুবার ব্যবহার হয়েছে`, "err");
+      const all = {};
+      // keep every class's list explicit once the admin starts managing subjects
+      for (const c of CLASS_NAMES) all[c] = c === cls ? clean : subjectsFor(S, c);
+      try { await store.saveSettings({ subjects: all }); S = await store.getSettings(true); rows = clean.map(r => ({ ...r })); dirty = false; draw(); toast(`${cls}-এর বিষয় তালিকা সংরক্ষিত হয়েছে`); }
+      catch (err) { toast("সংরক্ষণ ব্যর্থ: " + err.message, "err"); }
+    });
+  },
+
   // ----------------------------------------------------------------- Settings
   async settings() {
     S = await store.getSettings(true);
@@ -616,9 +727,7 @@ const VIEWS = {
     const all = F.flatMap(g => g[1]);
     view().innerHTML = `<form id="setForm" class="settings">
       ${F.map(([t, fs]) => `<section class="panel"><h3>${t}</h3><div class="form-grid">${fs.map(f => fieldHtml(f, S)).join("")}</div></section>`).join("")}
-      <section class="panel"><h3>শ্রেণিভিত্তিক বিষয়সমূহ</h3><p class="muted small">প্রতি লাইনে একটি বিষয় লিখুন। ফলাফল এন্ট্রি ও একাডেমিক পাতায় এই তালিকা ব্যবহৃত হবে।</p>
-        <div class="form-grid">${CLASS_NAMES.map(c => `<label>${c}<textarea data-subj="${esc(c)}" rows="7">${esc(subjectsFor(S, c).join("\n"))}</textarea></label>`).join("")}</div>
-        <button type="button" class="btn btn-sm btn-ghost" id="subjReset">ডিফল্ট বিষয় তালিকা ফিরিয়ে আনুন</button></section>
+      <section class="panel"><h3>শ্রেণিভিত্তিক বিষয়সমূহ</h3><p class="muted small">বিষয়, বিষয় কোড, পূর্ণমান ও পাস নম্বর এখন আলাদা পাতায়: <a class="link" href="#subjects">বিষয় ও নম্বর ${icon("arrowRight", "sm")}</a></p></section>
       <div class="sticky-save"><button class="btn btn-primary btn-lg" type="submit">${icon("check")}সেটিংস সংরক্ষণ করুন</button></div></form>
       ${store.MODE === "firebase"
         ? `<section class="panel"><h3>অ্যাডমিন অ্যাকাউন্ট</h3><p>পাসওয়ার্ড পরিবর্তন বা নতুন অ্যাডমিন যোগ করতে Firebase Console → Authentication ব্যবহার করুন। নতুন অ্যাডমিনের UID দিয়ে Firestore-এ <code>users/{UID}</code> ডকুমেন্টে <code>role: "admin"</code> যোগ করুন।</p></section>`
@@ -634,11 +743,9 @@ const VIEWS = {
             <div class="form-actions" style="align-self:end"><button class="btn btn-primary">${icon("plus")}যোগ করুন</button></div></form></section>` : ""}`;
     const form = $("#setForm");
     bindFileFields(form, "settings");
-    $("#subjReset").onclick = () => $$("[data-subj]").forEach(t => t.value = DEFAULT_SUBJECTS[t.dataset.subj].join("\n"));
     form.addEventListener("submit", async e => {
       e.preventDefault(); if (!form.reportValidity()) return;
       const d = readForm(form, all);
-      d.subjects = Object.fromEntries($$("[data-subj]").map(t => [t.dataset.subj, t.value.split("\n").map(s => s.trim()).filter(Boolean)]));
       try { await store.saveSettings(d); S = await store.getSettings(true); toast("সেটিংস সংরক্ষিত হয়েছে"); } catch (err) { toast(err.message, "err"); }
     });
     $("#pwForm")?.addEventListener("submit", async e => { e.preventDefault(); const f = e.target; try { await store.changePassword(f.current.value, f.pw.value); f.reset(); toast("পাসওয়ার্ড পরিবর্তন হয়েছে"); } catch (err) { toast(err.message, "err"); } });
@@ -680,8 +787,10 @@ const VIEWS = {
 };
 
 // ===================================================================== Results editor
+const toResultRows = (cls, group) => subjectsFor(S, cls, group).map(s => ({ code: s.code, subject: s.name, subjectEn: s.nameEn, full: s.full, pass: s.pass, marks: "" }));
+
 function editResult(rec, combo, done) {
-  const base = rec || { ...combo, roll: "", studentName: "", fatherName: "", group: "", remarks: "", published: false, subjects: subjectsFor(S, combo.className).map(s => ({ subject: s, full: 100, marks: "" })) };
+  const base = rec || { ...combo, roll: "", studentName: "", fatherName: "", group: "", remarks: "", published: false, subjects: toResultRows(combo.className) };
   const m = modal(`<h2 class="modal-title">${rec ? "ফলাফল সম্পাদনা" : "নতুন ফলাফল"}</h2>
     <form class="res-form">
       <div class="form-grid four">
@@ -695,16 +804,17 @@ function editResult(rec, combo, done) {
         <label>মন্তব্য<input name="remarks" value="${esc(base.remarks || "")}"></label>
       </div>
       <p class="muted small" id="stuHint">রোল লিখলে শিক্ষার্থী তালিকা থেকে নাম স্বয়ংক্রিয়ভাবে আসবে। অনুপস্থিত হলে নম্বরের ঘরে <b>AB</b> লিখুন।</p>
-      <div class="table-wrap"><table class="table subj-table"><thead><tr><th>বিষয়</th><th style="width:110px">পূর্ণমান</th><th style="width:130px">প্রাপ্ত নম্বর</th><th style="width:70px">গ্রেড</th><th style="width:44px"></th></tr></thead><tbody id="subRows"></tbody></table></div>
+      <div class="table-wrap"><table class="table subj-table"><thead><tr><th style="width:90px">কোড</th><th>বিষয়</th><th style="width:90px">পূর্ণমান</th><th style="width:90px">পাস নম্বর</th><th style="width:120px">প্রাপ্ত নম্বর</th><th style="width:64px">গ্রেড</th><th style="width:44px"></th></tr></thead><tbody id="subRows"></tbody></table></div>
       <div class="btn-row"><button type="button" class="btn btn-sm btn-ghost" id="addSub">+ বিষয় যোগ</button><button type="button" class="btn btn-sm btn-ghost" id="loadSub">শ্রেণির বিষয় তালিকা লোড</button></div>
       <div class="live-sum" id="liveSum"></div>
       <label class="check"><input type="checkbox" name="published" ${base.published ? "checked" : ""}> ওয়েবসাইটে প্রকাশ করুন</label>
       <div class="form-actions"><button type="button" class="btn btn-ghost" data-cancel>বাতিল</button><button class="btn btn-primary" type="submit">সংরক্ষণ করুন</button></div>
     </form>`, { wide: true });
   const f = $("form", m.el), tb = $("#subRows", f);
-  const rowHtml = s => `<tr><td><input data-k="subject" value="${esc(s.subject)}" required></td><td><input data-k="full" type="number" min="1" value="${esc(s.full || 100)}"></td><td><input data-k="marks" value="${esc(s.marks)}" placeholder="০–১০০ / AB"></td><td class="g"></td><td><button type="button" class="icon-btn" data-rm title="সরান">${icon("x")}</button></td></tr>`;
+  const rowHtml = s => { const full = s.full || 100; const pass = s.pass === "" || s.pass == null ? defaultPass(full) : s.pass;
+    return `<tr data-en="${esc(s.subjectEn || "")}"><td><input data-k="code" value="${esc(s.code || "")}"></td><td><input data-k="subject" value="${esc(s.subject)}" required></td><td><input data-k="full" type="number" min="1" value="${esc(full)}"></td><td><input data-k="pass" type="number" min="0" value="${esc(pass)}"></td><td><input data-k="marks" value="${esc(s.marks)}" placeholder="০–${bnNum(full)} / AB"></td><td class="g"></td><td><button type="button" class="icon-btn" data-rm title="সরান">${icon("x")}</button></td></tr>`; };
   const setRows = list => { tb.innerHTML = list.map(rowHtml).join(""); calc(); };
-  const read = () => $$("tr", tb).map(tr => ({ subject: $('[data-k="subject"]', tr).value.trim(), full: Number($('[data-k="full"]', tr).value) || 100, marks: (v => v === "" ? "" : /^ab$/i.test(v) ? "AB" : Number(v.replace(/[০-৯]/g, d => "০১২৩৪৫৬৭৮৯".indexOf(d))))($('[data-k="marks"]', tr).value.trim()) })).filter(s => s.subject);
+  const read = () => $$("tr", tb).map(tr => ({ code: $('[data-k="code"]', tr).value.trim().replace(/[০-৯]/g, d => "০১২৩৪৫৬৭৮৯".indexOf(d)), subject: $('[data-k="subject"]', tr).value.trim(), subjectEn: tr.dataset.en || "", full: Number($('[data-k="full"]', tr).value) || 100, pass: $('[data-k="pass"]', tr).value === "" ? defaultPass(Number($('[data-k="full"]', tr).value) || 100) : Number($('[data-k="pass"]', tr).value), marks: (v => v === "" ? "" : /^ab$/i.test(v) ? "AB" : Number(v.replace(/[০-৯]/g, d => "০১২৩৪৫৬৭৮৯".indexOf(d))))($('[data-k="marks"]', tr).value.trim()) })).filter(s => s.subject);
   function calc() {
     const subs = read(), c = computeResult(subs.map(s => ({ ...s, marks: s.marks === "" ? 0 : s.marks })));
     $$("tr", tb).forEach((tr, i) => { const r = c.rows[i]; $(".g", tr).innerHTML = r ? `<span class="badge ${r.grade === "F" ? "no" : "ok"}">${r.grade}</span>` : ""; });
@@ -713,8 +823,11 @@ function editResult(rec, combo, done) {
   setRows(base.subjects);
   tb.addEventListener("input", calc);
   tb.addEventListener("click", e => { if (e.target.closest("[data-rm]")) { e.target.closest("tr").remove(); calc(); } });
-  $("#addSub", f).onclick = () => { tb.insertAdjacentHTML("beforeend", rowHtml({ subject: "", full: 100, marks: "" })); };
-  $("#loadSub", f).onclick = () => { if (!read().some(s => s.marks !== "") || confirm("বর্তমান বিষয় ও নম্বর মুছে যাবে। চালিয়ে যাবেন?")) setRows(subjectsFor(S, f.elements.className.value).map(s => ({ subject: s, full: 100, marks: "" }))); };
+  $("#addSub", f).onclick = () => { tb.insertAdjacentHTML("beforeend", rowHtml({ code: "", subject: "", full: 100, marks: "" })); };
+  const reloadSubjects = () => setRows(toResultRows(f.elements.className.value, f.group.value));
+  $("#loadSub", f).onclick = () => { if (!read().some(s => s.marks !== "") || confirm("বর্তমান বিষয় ও নম্বর মুছে যাবে। চালিয়ে যাবেন?")) reloadSubjects(); };
+  // a new result follows the class/group's subject list until marks are typed in
+  [f.elements.className, f.group].forEach(el => el.addEventListener("change", () => { if (!rec && !read().some(s => s.marks !== "")) reloadSubjects(); }));
   $("[data-cancel]", f).onclick = m.close;
   f.roll.addEventListener("change", async () => {
     if (f.studentName.value) return;
@@ -749,24 +862,32 @@ function importResults(combo, done) {
   const subs = subjectsFor(S, combo.className);
   const m = modal(`<h2 class="modal-title">CSV থেকে ফলাফল আমদানি</h2>
     <p><b>${esc(combo.className)}</b> · ${esc(combo.exam)} · ${esc(combo.year)}</p>
-    <ol class="steps"><li>টেমপ্লেট ডাউনলোড করে Excel-এ খুলুন।</li><li>প্রতি সারিতে একজন শিক্ষার্থীর রোল, নাম ও বিষয়ভিত্তিক নম্বর লিখুন (অনুপস্থিত হলে AB)।</li><li>পূর্ণমান ১০০ না হলে কলামের নামে <code>বিষয়|50</code> এভাবে লিখুন।</li><li><b>CSV UTF-8</b> হিসেবে সেভ করে এখানে আপলোড করুন।</li></ol>
+    <ol class="steps"><li>টেমপ্লেট ডাউনলোড করে Excel-এ খুলুন।</li><li>প্রতি সারিতে একজন শিক্ষার্থীর রোল, নাম, বিভাগ (দাখিল/আলিমে) ও বিষয়ভিত্তিক নম্বর লিখুন। পরীক্ষায় অনুপস্থিত হলে <b>AB</b> লিখুন; যে বিষয় শিক্ষার্থীর নেই সেটির ঘর খালি রাখুন।</li><li>বিষয় কোড, পূর্ণমান ও পাস নম্বর "বিষয় ও নম্বর" পাতা থেকে নেওয়া হবে — কলামের শিরোনাম পরিবর্তন করবেন না।</li><li><b>CSV UTF-8</b> হিসেবে সেভ করে এখানে আপলোড করুন।</li></ol>
     <p><button class="btn btn-sm btn-ghost" id="tpl">${icon("download")}টেমপ্লেট ডাউনলোড</button></p>
     <input type="file" accept=".csv,text/csv" id="csvFile"><div id="csvPrev"></div>
     <label class="check"><input type="checkbox" id="pubNow"> আমদানির সাথে সাথে প্রকাশ করুন</label>
     <div class="form-actions"><button class="btn btn-primary" id="doImp" disabled>আমদানি করুন</button></div>`, { wide: true });
   let items = [];
-  $("#tpl", m.el).onclick = () => downloadFile(`result-template-${combo.className}.csv`, "﻿" + ["roll", "studentName", "fatherName", ...subs].join(",") + "\n1,,," + subs.map(() => "").join(",") + "\n", "text/csv");
+  const colName = x => x.code ? `${x.code} - ${x.name}` : x.name;
+  $("#tpl", m.el).onclick = () => downloadFile(`result-template-${combo.className}.csv`, toCSV([{}], [["roll", () => "1"], ["studentName", () => ""], ["fatherName", () => ""], ["group", () => ""], ...subs.map(x => [colName(x), () => ""])]), "text/csv");
   $("#csvFile", m.el).onchange = async e => {
     const p = parseCSV(await e.target.files[0].text());
     if (p.length < 2) { $("#csvPrev", m.el).innerHTML = `<p class="err">ফাইলে কোনো তথ্য নেই</p>`; return; }
-    const head = p[0].map(h => h.trim()), iRoll = head.indexOf("roll"), iName = head.indexOf("studentName"), iFather = head.indexOf("fatherName");
+    const head = p[0].map(h => h.trim()), iRoll = head.indexOf("roll"), iName = head.indexOf("studentName"), iFather = head.indexOf("fatherName"), iGroup = head.indexOf("group");
     if (iRoll < 0 || iName < 0) { $("#csvPrev", m.el).innerHTML = `<p class="err">"roll" ও "studentName" কলাম পাওয়া যায়নি</p>`; return; }
-    const subCols = head.map((h, i) => [h, i]).filter(([h, i]) => h && ![iRoll, iName, iFather].includes(i)).map(([h, i]) => { const [name, full] = h.split("|"); return { name: name.trim(), full: Number(full) || 100, i }; });
+    // match each column to the class's subject list: "code - name", the name, or the code; older "name|full" headers still work
+    const subCols = head.map((h, i) => [h, i]).filter(([h, i]) => h && ![iRoll, iName, iFather, iGroup].includes(i)).map(([h, i]) => {
+      const [label, fullTxt] = h.split("|"), t = label.trim();
+      const known = subs.find(x => colName(x) === t || x.name === t || (x.code && (x.code === t || t.startsWith(x.code + " - "))));
+      return known ? { code: known.code, name: known.name, nameEn: known.nameEn, full: known.full, pass: known.pass, i } : { code: "", name: t, nameEn: "", full: Number(fullTxt) || 100, pass: defaultPass(Number(fullTxt) || 100), i };
+    });
     const errs = [];
     items = p.slice(1).filter(r => (r[iRoll] || "").trim()).map((r, n) => {
       const roll = r[iRoll].trim().replace(/[০-৯]/g, x => "০১২৩৪৫৬৭৮৯".indexOf(x));
-      const subjects = subCols.map(s => { const v = (r[s.i] || "").trim(); const marks = v === "" || /^ab$/i.test(v) ? "AB" : Number(v.replace(/[০-৯]/g, x => "০১২৩৪৫৬৭৮৯".indexOf(x))); if (marks !== "AB" && (isNaN(marks) || marks < 0 || marks > s.full)) errs.push(`সারি ${n + 2}: ${s.name}`); return { subject: s.name, full: s.full, marks }; });
-      const d = { year: Number(combo.year), exam: combo.exam, className: combo.className, group: "", roll, studentName: (r[iName] || "").trim(), fatherName: iFather >= 0 ? (r[iFather] || "").trim() : "", remarks: "", subjects, published: false, position: null, createdAt: Date.now() };
+      // empty cell = the student does not take this subject; AB = absent
+      const subjects = subCols.filter(s => (r[s.i] || "").trim() !== "").map(s => { const v = (r[s.i] || "").trim(); const marks = /^ab$/i.test(v) ? "AB" : Number(v.replace(/[০-৯]/g, x => "০১২৩৪৫৬৭৮৯".indexOf(x))); if (marks !== "AB" && (isNaN(marks) || marks < 0 || marks > s.full)) errs.push(`সারি ${n + 2}: ${s.name}`); return { code: s.code, subject: s.name, subjectEn: s.nameEn, full: s.full, pass: s.pass, marks }; });
+      if (!subjects.length) errs.push(`সারি ${n + 2}: কোনো নম্বর নেই`);
+      const d = { year: Number(combo.year), exam: combo.exam, className: combo.className, group: iGroup >= 0 && GROUPS.includes((r[iGroup] || "").trim()) ? r[iGroup].trim() : "", roll, studentName: (r[iName] || "").trim(), fatherName: iFather >= 0 ? (r[iFather] || "").trim() : "", remarks: "", subjects, published: false, position: null, createdAt: Date.now() };
       return { col: "results", id: store.resultId(d.year, d.exam, d.className, roll), data: d };
     });
     $("#csvPrev", m.el).innerHTML = `<p>${bnNum(items.length)} জন শিক্ষার্থী, ${bnNum(subCols.length)}টি বিষয় পাওয়া গেছে।</p>${errs.length ? `<p class="err">ভুল নম্বর: ${esc(errs.slice(0, 8).join(", "))}${errs.length > 8 ? "…" : ""}</p>` : ""}`;
@@ -781,10 +902,11 @@ function importResults(combo, done) {
 function printTabulation(rows, c) {
   if (!rows.length) return toast("কোনো ফলাফল নেই", "err");
   const subs = [...new Set(rows.flatMap(r => r.subjects.map(s => s.subject)))];
+  const codeOf = name => rows.flatMap(r => r.subjects).find(s => s.subject === name && s.code)?.code || "";
   const w = window.open("", "_blank"); if (!w) return toast("পপ-আপ চালু করুন", "err");
   w.document.write(`<!doctype html><html lang="bn"><head><meta charset="utf-8"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600&family=Noto+Serif+Bengali:wght@400;600&display=swap"><title>টেবুলেশন শিট</title><style>@page{size:A4 landscape;margin:10mm}body{font-family:"Noto Sans","SutonnyOMJ","Noto Serif Bengali",sans-serif;font-size:9pt}h1,h2{text-align:center;margin:2px}table{width:100%;border-collapse:collapse;margin-top:10px}th,td{border:1px solid #555;padding:3px;text-align:center}th{background:#eee}td.l{text-align:left}.f{color:#b00;font-weight:700}.sign{display:flex;justify-content:space-between;margin-top:50px}.sign span{border-top:1px solid #000;padding-top:3px}</style></head><body>
   <h1>${esc(S.nameBn)}</h1><h2>টেবুলেশন শিট — ${esc(c.exam)} ${esc(c.year)} · ${esc(c.className)}</h2>
-  <table><thead><tr><th>রোল</th><th>নাম</th>${subs.map(s => `<th>${esc(s)}</th>`).join("")}<th>মোট</th><th>GPA</th><th>গ্রেড</th><th>স্থান</th></tr></thead><tbody>
+  <table><thead><tr><th>রোল</th><th>নাম</th>${subs.map(s => `<th>${codeOf(s) ? `<small>${esc(codeOf(s))}</small><br>` : ""}${esc(s)}</th>`).join("")}<th>মোট</th><th>GPA</th><th>গ্রেড</th><th>স্থান</th></tr></thead><tbody>
   ${rows.map(r => `<tr><td>${esc(r.roll)}</td><td class="l">${esc(r.studentName)}</td>${subs.map(s => { const x = r._c.rows.find(k => k.subject === s); return `<td class="${x?.grade === "F" ? "f" : ""}">${x ? `${x.marks}<br><small>${x.grade}</small>` : ""}</td>`; }).join("")}<td>${r._c.total}</td><td>${r._c.gpa.toFixed(2)}</td><td class="${r._c.passed ? "" : "f"}">${r._c.grade}</td><td>${r.position || ""}</td></tr>`).join("")}
   </tbody></table><div class="sign"><span>শ্রেণি শিক্ষক</span><span>পরীক্ষা নিয়ন্ত্রক</span><span>অধ্যক্ষ</span></div><script>window.onload=()=>document.fonts.ready.then(()=>window.print())<\/script></body></html>`);
   w.document.close();
