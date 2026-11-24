@@ -285,7 +285,7 @@ const RES = {
     filter: { name: "className", label: "শ্রেণি", options: [["", "সকল শ্রেণি"], ...CLASS_NAMES] },
     sort: (a, b) => CLASS_NAMES.indexOf(a.className) - CLASS_NAMES.indexOf(b.className) || (Number(a.roll) || 0) - (Number(b.roll) || 0),
     search: x => [x.name, x.nameEn, x.roll, x.studentId, x.fatherName, x.guardianPhone].join(" "),
-    beforeSave: d => { if (!d.studentId) d.studentId = String(d.session || new Date().getFullYear()).slice(-2) + String(CLASS_NAMES.indexOf(d.className) + 6).padStart(2, "0") + String(d.roll).padStart(3, "0"); return d; },
+    beforeSave: d => { if (!d.studentId) d.studentId = String(d.session || new Date().getFullYear()).slice(-2) + String(CLASSES.find(c => c.name === d.className)?.num || 0).padStart(2, "0") + String(d.roll).padStart(3, "0"); return d; },
     extra: true
   }
 };

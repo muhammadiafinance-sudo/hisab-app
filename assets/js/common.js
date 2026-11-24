@@ -16,23 +16,33 @@ export const fmtDate = (t, opt = { day: "numeric", month: "long", year: "numeric
 };
 
 // ---------------------------------------------------------------- Academic structure
+// num = class number (used in student IDs). Order here is the order everywhere on the site.
 export const CLASSES = [
-  { name: "ষষ্ঠ শ্রেণি", en: "Class Six", level: "নিম্ন মাধ্যমিক", short: "৬" },
-  { name: "সপ্তম শ্রেণি", en: "Class Seven", level: "নিম্ন মাধ্যমিক", short: "৭" },
-  { name: "অষ্টম শ্রেণি", en: "Class Eight", level: "নিম্ন মাধ্যমিক", short: "৮" },
-  { name: "নবম শ্রেণি", en: "Class Nine (Dakhil)", level: "দাখিল", short: "৯", groups: true },
-  { name: "দশম শ্রেণি", en: "Class Ten (Dakhil)", level: "দাখিল", short: "১০", groups: true },
-  { name: "আলিম ১ম বর্ষ", en: "Alim 1st Year", level: "আলিম", short: "আ-১", groups: true },
-  { name: "আলিম ২য় বর্ষ", en: "Alim 2nd Year", level: "আলিম", short: "আ-২", groups: true }
+  { name: "প্রথম শ্রেণি", en: "Class One", level: "ইবতেদায়ী", short: "১", num: 1 },
+  { name: "দ্বিতীয় শ্রেণি", en: "Class Two", level: "ইবতেদায়ী", short: "২", num: 2 },
+  { name: "তৃতীয় শ্রেণি", en: "Class Three", level: "ইবতেদায়ী", short: "৩", num: 3 },
+  { name: "চতুর্থ শ্রেণি", en: "Class Four", level: "ইবতেদায়ী", short: "৪", num: 4 },
+  { name: "পঞ্চম শ্রেণি", en: "Class Five", level: "ইবতেদায়ী", short: "৫", num: 5 },
+  { name: "ষষ্ঠ শ্রেণি", en: "Class Six", level: "নিম্ন মাধ্যমিক", short: "৬", num: 6 },
+  { name: "সপ্তম শ্রেণি", en: "Class Seven", level: "নিম্ন মাধ্যমিক", short: "৭", num: 7 },
+  { name: "অষ্টম শ্রেণি", en: "Class Eight", level: "নিম্ন মাধ্যমিক", short: "৮", num: 8 },
+  { name: "নবম শ্রেণি", en: "Class Nine (Dakhil)", level: "দাখিল", short: "৯", num: 9, groups: true },
+  { name: "দশম শ্রেণি", en: "Class Ten (Dakhil)", level: "দাখিল", short: "১০", num: 10, groups: true },
+  { name: "আলিম ১ম বর্ষ", en: "Alim 1st Year", level: "আলিম", short: "আ-১", num: 11, groups: true },
+  { name: "আলিম ২য় বর্ষ", en: "Alim 2nd Year", level: "আলিম", short: "আ-২", num: 12, groups: true }
 ];
 export const GROUPS = ["সাধারণ", "বিজ্ঞান"];
 export const EXAMS = ["প্রথম সাময়িক পরীক্ষা", "অর্ধবার্ষিক পরীক্ষা", "দ্বিতীয় সাময়িক পরীক্ষা", "বার্ষিক পরীক্ষা", "প্রাক-নির্বাচনী পরীক্ষা", "নির্বাচনী পরীক্ষা", "মডেল টেস্ট"];
 export const NOTICE_CATS = ["সাধারণ", "ভর্তি", "পরীক্ষা", "ফলাফল", "ছুটি", "অনুষ্ঠান", "শিক্ষক-কর্মচারী"];
 
+// Ebtedayee (Classes One–Five): starting lists only — the admin can change everything.
+const EB1 = ["কুরআন মাজিদ ও তাজভিদ", "আকাইদ ও ফিকহ", "আরবি", "বাংলা", "ইংরেজি", "গণিত"];
+const EB3 = ["কুরআন মাজিদ ও তাজভিদ", "আকাইদ ও ফিকহ", "আরবি", "বাংলা", "ইংরেজি", "গণিত", "বাংলাদেশ ও বিশ্বপরিচয়", "প্রাথমিক বিজ্ঞান"];
 const JR = ["কুরআন মাজিদ ও তাজভিদ", "আকাইদ ও ফিকহ", "আরবি ১ম পত্র", "আরবি ২য় পত্র", "বাংলা ১ম পত্র", "বাংলা ২য় পত্র", "ইংরেজি ১ম পত্র", "ইংরেজি ২য় পত্র", "গণিত", "বিজ্ঞান", "বাংলাদেশ ও বিশ্বপরিচয়", "তথ্য ও যোগাযোগ প্রযুক্তি"];
 const DK = ["কুরআন মাজিদ ও তাজভিদ", "হাদিস শরিফ", "আকাইদ ও ফিকহ", "আরবি ১ম পত্র", "আরবি ২য় পত্র", "বাংলা ১ম পত্র", "বাংলা ২য় পত্র", "ইংরেজি ১ম পত্র", "ইংরেজি ২য় পত্র", "গণিত", "তথ্য ও যোগাযোগ প্রযুক্তি", "বিজ্ঞান / পদার্থ", "ইসলামের ইতিহাস / রসায়ন", "জীববিজ্ঞান / উচ্চতর গণিত"];
 const AL = ["কুরআন মাজিদ", "হাদিস শরিফ", "আরবি ১ম পত্র", "আরবি ২য় পত্র", "বাংলা", "ইংরেজি", "তথ্য ও যোগাযোগ প্রযুক্তি", "ফিকহ ও উসুলুল ফিকহ", "ইসলামের ইতিহাস / পদার্থবিজ্ঞান", "রসায়ন / ইসলামি দর্শন", "জীববিজ্ঞান / উচ্চতর গণিত"];
 export const DEFAULT_SUBJECTS = {
+  "প্রথম শ্রেণি": EB1, "দ্বিতীয় শ্রেণি": EB1, "তৃতীয় শ্রেণি": EB3, "চতুর্থ শ্রেণি": EB3, "পঞ্চম শ্রেণি": EB3,
   "ষষ্ঠ শ্রেণি": JR, "সপ্তম শ্রেণি": JR, "অষ্টম শ্রেণি": JR,
   "নবম শ্রেণি": DK, "দশম শ্রেণি": DK, "আলিম ১ম বর্ষ": AL, "আলিম ২য় বর্ষ": AL
 };

@@ -73,7 +73,7 @@ function seed() {
   const db = { notices: {}, events: {}, results: {}, settings: {}, teachers: {}, gallery: {}, downloads: {}, routines: {}, admissions: {}, students: {}, messages: {} };
   const n = (id, title, category, body, ago, pinned = false) =>
     db.notices[id] = { title, category, body, fileUrl: "", published: true, pinned, createdAt: now - ago * day };
-  n("demo1", "নমুনা নোটিশ: ২০২৭ শিক্ষাবর্ষে ভর্তি চলছে", "ভর্তি", "ষষ্ঠ শ্রেণি থেকে আলিম পর্যন্ত সকল শ্রেণিতে ভর্তি চলছে। অনলাইনে আবেদন করুন অথবা অফিসে যোগাযোগ করুন। (এটি ডেমো তথ্য — অ্যাডমিন প্যানেল থেকে মুছে ফেলুন)", 1, true);
+  n("demo1", "নমুনা নোটিশ: ২০২৭ শিক্ষাবর্ষে ভর্তি চলছে", "ভর্তি", "প্রথম শ্রেণি থেকে আলিম পর্যন্ত সকল শ্রেণিতে ভর্তি চলছে। অনলাইনে আবেদন করুন অথবা অফিসে যোগাযোগ করুন। (এটি ডেমো তথ্য — অ্যাডমিন প্যানেল থেকে মুছে ফেলুন)", 1, true);
   n("demo2", "নমুনা নোটিশ: বার্ষিক পরীক্ষার সময়সূচি প্রকাশ", "পরীক্ষা", "বার্ষিক পরীক্ষার সময়সূচি ডাউনলোড পাতায় পাওয়া যাবে। (ডেমো তথ্য)", 4);
   n("demo3", "নমুনা নোটিশ: শীতকালীন ছুটি", "ছুটি", "শীতকালীন ছুটি উপলক্ষে মাদ্রাসা বন্ধ থাকবে। (ডেমো তথ্য)", 9);
   db.events.demoE1 = { title: "বার্ষিক পরীক্ষা শুরু (নমুনা)", date: new Date(now + 7 * day).toISOString().slice(0, 10), place: "মাদ্রাসা প্রাঙ্গণ", published: true, createdAt: now };
