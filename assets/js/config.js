@@ -40,9 +40,9 @@ export const DEFAULT_SETTINGS = {
   principalTitle: "অধ্যক্ষ",
   principalPhoto: "",
   principalMessage:
-    "আসসালামু আলাইকুম ওয়া রাহমাতুল্লাহ। আমাদের মাদ্রাসায় ষষ্ঠ শ্রেণি থেকে আলিম পর্যন্ত কুরআন-সুন্নাহভিত্তিক দ্বীনি শিক্ষার পাশাপাশি আধুনিক সাধারণ শিক্ষা দেওয়া হয়। আমাদের লক্ষ্য—জ্ঞানী, চরিত্রবান ও দেশপ্রেমিক নাগরিক গড়ে তোলা। অভিভাবক ও শুভানুধ্যায়ীদের সহযোগিতা আমাদের পথচলার শক্তি।",
+    "আসসালামু আলাইকুম ওয়া রাহমাতুল্লাহ। আমাদের মাদ্রাসায় প্রথম শ্রেণি থেকে আলিম পর্যন্ত কুরআন-সুন্নাহভিত্তিক দ্বীনি শিক্ষার পাশাপাশি আধুনিক সাধারণ শিক্ষা দেওয়া হয়। আমাদের লক্ষ্য—জ্ঞানী, চরিত্রবান ও দেশপ্রেমিক নাগরিক গড়ে তোলা। অভিভাবক ও শুভানুধ্যায়ীদের সহযোগিতা আমাদের পথচলার শক্তি।",
   about:
-    "সিংচাপইড় ইসলামিয়া আলিম মাদ্রাসা বাংলাদেশ মাদ্রাসা শিক্ষা বোর্ডের অধীনে পরিচালিত একটি দ্বীনি শিক্ষা প্রতিষ্ঠান। এখানে ষষ্ঠ শ্রেণি থেকে দাখিল (দশম শ্রেণি) এবং আলিম (একাদশ-দ্বাদশ) পর্যন্ত পাঠদান করা হয়।",
+    "সিংচাপইড় ইসলামিয়া আলিম মাদ্রাসা বাংলাদেশ মাদ্রাসা শিক্ষা বোর্ডের অধীনে পরিচালিত একটি দ্বীনি শিক্ষা প্রতিষ্ঠান। এখানে ইবতেদায়ী (প্রথম–পঞ্চম শ্রেণি), নিম্ন মাধ্যমিক (ষষ্ঠ–অষ্টম শ্রেণি), দাখিল (নবম–দশম শ্রেণি) এবং আলিম (একাদশ–দ্বাদশ) পর্যন্ত পাঠদান করা হয়।",
   history: "",
   mission: "কুরআন ও সুন্নাহর আলোকে আধুনিক ও যুগোপযোগী শিক্ষার মাধ্যমে আদর্শ মানুষ গড়ে তোলা।",
   vision: "দ্বীনি ও সাধারণ শিক্ষার সমন্বয়ে এলাকার শ্রেষ্ঠ শিক্ষা প্রতিষ্ঠান হিসেবে প্রতিষ্ঠিত হওয়া।",
@@ -65,9 +65,9 @@ export const DEFAULT_SETTINGS_EN = {
   slogan: "Knowledge • Morality • Humanity",
   principalTitle: "Principal",
   principalMessage:
-    "Assalamu Alaikum wa Rahmatullah. From Class Six to Alim, our madrasha offers religious education based on the Qur'an and Sunnah together with modern general education. Our aim is to raise knowledgeable, upright and patriotic citizens. The support of guardians and well-wishers is the strength of our journey.",
+    "Assalamu Alaikum wa Rahmatullah. From Class One to Alim, our madrasha offers religious education based on the Qur'an and Sunnah together with modern general education. Our aim is to raise knowledgeable, upright and patriotic citizens. The support of guardians and well-wishers is the strength of our journey.",
   about:
-    "Singchapair Islamia Alim Madrasha is an Islamic educational institution under the Bangladesh Madrasah Education Board. Classes are taught from Class Six to Dakhil (Class Ten) and Alim (Classes Eleven and Twelve).",
+    "Singchapair Islamia Alim Madrasha is an Islamic educational institution under the Bangladesh Madrasah Education Board. Classes are taught at Ebtedayee (Classes One–Five), Lower Secondary (Classes Six–Eight), Dakhil (Classes Nine–Ten) and Alim (Classes Eleven–Twelve) levels.",
   mission: "To build ideal people through modern, up-to-date education in the light of the Qur'an and Sunnah.",
   vision: "To become the leading educational institution of the area by combining religious and general education.",
   admissionInfo:

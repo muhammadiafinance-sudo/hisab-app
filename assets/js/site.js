@@ -115,8 +115,8 @@ const pages = {
 
     // ---- statistics with count-up
     const years = /^\d{4}$/.test(String(S.estd).replace(/[০-৯]/g, d => "০১২৩৪৫৬৭৮৯".indexOf(d))) ? new Date().getFullYear() - Number(String(S.estd).replace(/[০-৯]/g, d => "০১২৩৪৫৬৭৮৯".indexOf(d))) : 0;
-    const stats = [[S.statStudents, "শিক্ষার্থী", "users"], [S.statTeachers, "শিক্ষক-শিক্ষিকা", "user"], ["7", "শ্রেণি (৬ষ্ঠ–আলিম)", "book"], [S.statPass, "পাসের হার", "award"], [years > 0 ? String(years) + "+" : "", "বছরের পথচলা", "calendar"],
-      ["3", "শিক্ষা স্তর (নিম্ন মাধ্যমিক, দাখিল, আলিম)", "cap"], ["2", "বিভাগ (সাধারণ ও বিজ্ঞান)", "list"]].filter(s => s[0]).slice(0, 4);
+    const stats = [[S.statStudents, "শিক্ষার্থী", "users"], [S.statTeachers, "শিক্ষক-শিক্ষিকা", "user"], [String(CLASSES.length), "শ্রেণি (১ম–আলিম)", "book"], [S.statPass, "পাসের হার", "award"], [years > 0 ? String(years) + "+" : "", "বছরের পথচলা", "calendar"],
+      [String(new Set(CLASSES.map(c => c.level)).size), "শিক্ষা স্তর (ইবতেদায়ী, নিম্ন মাধ্যমিক, দাখিল, আলিম)", "cap"], ["2", "বিভাগ (সাধারণ ও বিজ্ঞান)", "list"]].filter(s => s[0]).slice(0, 4);
     $("#stats").innerHTML = stats.map(([v, l, ic]) => `<div class="stat"><span class="stat-ic">${icon(ic)}</span><div><b data-count="${esc(v)}">${esc(bnNum(v))}</b><span>${l}</span></div></div>`).join("");
     countUp($$("#stats [data-count]"));
 
@@ -175,7 +175,7 @@ const pages = {
     $("#aboutPrincipalMsg").textContent = S.principalMessage;
     $("#aboutPrincipalName").textContent = [S.principalName, S.principalTitle].filter(Boolean).join(" — ");
     $("#aboutPrincipalPhoto").innerHTML = avatar(S.principalPhoto, S.principalName || "অধ্যক্ষ", "principal-img");
-    const facts = [["প্রতিষ্ঠার সাল", S.estd], ["EIIN", S.eiin], ["মাদ্রাসা কোড", S.madrasaCode], ["শিক্ষা বোর্ড", "বাংলাদেশ মাদ্রাসা শিক্ষা বোর্ড"], ["শ্রেণি", "ষষ্ঠ শ্রেণি থেকে আলিম"], ["ঠিকানা", S.address]].filter(f => f[1]);
+    const facts = [["প্রতিষ্ঠার সাল", S.estd], ["EIIN", S.eiin], ["মাদ্রাসা কোড", S.madrasaCode], ["শিক্ষা বোর্ড", "বাংলাদেশ মাদ্রাসা শিক্ষা বোর্ড"], ["শ্রেণি", "প্রথম শ্রেণি থেকে আলিম"], ["ঠিকানা", S.address]].filter(f => f[1]);
     $("#facts").innerHTML = facts.map(([k, v]) => `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join("");
     try {
       const c = (await store.list("teachers", { publicOnly: true })).filter(t => t.category === "committee");
